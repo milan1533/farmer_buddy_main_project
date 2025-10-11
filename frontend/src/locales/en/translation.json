@@ -1,0 +1,29 @@
+{
+  "header": {
+    "title": "AgriVision",
+    "subtitle": "AI-powered Crop Analysis & Farming Insights"
+  },
+  "upload": {
+    "label": "Click to upload an image",
+    "analyzing": "Analyzing image..."
+  },
+  "results": {
+    "sectionTitle": "Crop Analysis",
+    "cropName": "Crop Name",
+    "diseaseStatus": "Disease Status",
+    "suggestedMedicine": "Suggested Medicine",
+    "suggestedFertiliser": "Suggested Fertiliser",
+    "careAndPrevention": "Care & Prevention",
+    "loading": "Loading..."
+  },
+  "actions": {
+    "weather": "Weather Forecast",
+    "market": "Market Prices",
+    "soil": "Soil Health Report",
+    "pest": "Pest Control Guide",
+    "actionRequired": "Action Required",
+    "uploadFirst": "Please upload a crop image and get an analysis before selecting an option.",
+    "fetchingFor": "Fetching information for {{topic}}...",
+    "fetchFailed": "Failed to fetch information. Please try again."
+  }
+}

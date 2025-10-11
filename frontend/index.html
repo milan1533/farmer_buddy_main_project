@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Farmer Buddy</title>
+
+    <style>
+    .splash-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    .splash-logo {
+      width: 160px;
+      height: auto;
+      margin-bottom: 16px;
+      object-fit: contain;
+    }
+
+    .splash-title {
+      font-size: 28px;
+      font-weight: bold;
+      color: #166534; /* green-800 */
+      margin: 0 0 6px 0;
+      text-align: center;
+      padding: 0 20px;
+    }
+
+    .splash-subtitle {
+      font-size: 16px;
+      color: #6b7280; /* gray-500 */
+      margin: 0 0 16px 0;
+      text-align: center;
+      padding: 0 20px;
+    }
+
+    .splash-version {
+      font-size: 12px;
+      color: #9ca3af; /* gray-400 */
+      margin: 0 0 16px 0;
+      opacity: 0.9;
+    }
+
+    .splash-loader {
+      width: 40px;
+      height: 40px;
+      border: 4px solid rgba(0, 0, 0, 0.08);
+      border-top: 4px solid #16a34a;
+      border-radius: 50%;
+      animation: splash-spin 1s linear infinite;
+    }
+
+    @keyframes splash-spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 768px) {
+      .splash-title { font-size: 22px; }
+      .splash-subtitle { font-size: 14px; }
+      .splash-logo { width: 130px; }
+    }
+
+    /* Dark mode (Tailwind's .dark class on html) */
+    html.dark .splash-container { background-color: #0b1220; }
+    html.dark .splash-title { color: #e5e7eb; }
+    html.dark .splash-subtitle, html.dark .splash-version { color: #9ca3af; }
+    html.dark .splash-loader { border-color: rgba(255,255,255,0.08); border-top-color: #10b981; }
+    </style>
+  </head>
+  <body>
+  
+
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+
+   
+  </body>
+</html>
