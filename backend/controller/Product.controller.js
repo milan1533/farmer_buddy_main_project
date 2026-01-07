@@ -15,41 +15,61 @@ export const addProduct = async (req, res) => {
     location
   } = req.body;
 
+  // farm is optional now (unauthenticated users can post). If authenticated, req.id will be present.
+  const farm = req.id || null;
 
-
-  const farm = req.id;
-
-
-
-  if (!name || !price_per_unit || !quantity || !unit || !category || !farm) {
+  if (!name || !price_per_unit || !quantity || !unit || !category) {
     return res
       .status(400)
       .json({ success: false, message: "Missing required fields." });
   }
-  let imageUrl = null;
+  let imageUrls = [];
   try {
-    
-    // console.log("ok")
-    if (req.file) {
-      const result = await cloudinary.uploader.upload(req.file.path, {
-        folder: 'farmer-products'
-      });
-      console.log("result", result)
-      imageUrl = result.secure_url;
+    // Helper to process a single uploaded file => url
+    const toUrl = async (file) => {
+      if (!file) return null;
+      const baseUrl = process.env.VITE_BASE_URL || 'http://localhost:5000';
+      // If Cloudinary configured, try upload
+      if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
+        try {
+          const result = await cloudinary.uploader.upload(file.path, { folder: 'farmer-products' });
+          // remove temp
+          try { fs.unlinkSync(file.path); } catch {}
+          return result.secure_url;
+        } catch (err) {
+          console.error('Cloudinary upload failed, fallback to local:', err?.message || err);
+          return `${baseUrl}/uploads/${file.filename}`;
+        }
+      }
+      // Local fallback
+      return `${baseUrl}/uploads/${file.filename}`;
+    };
 
-      // Remove temp file
-      fs.unlinkSync(req.file.path);
+    // Multer can provide: req.file (single) or req.files with keys
+    if (req.file) {
+      const url = await toUrl(req.file);
+      if (url) imageUrls.push(url);
+    }
+    if (req.files && (req.files.productImage || req.files.images)) {
+      const files = [
+        ...(req.files.productImage || []),
+        ...(req.files.images || []),
+      ];
+      for (const f of files) {
+        const url = await toUrl(f);
+        if (url) imageUrls.push(url);
+      }
     }
 
     const newProduct = new Product({
       name,
       description,
-      price: price_per_unit, // Map to the correct field
-      availableQuantity: quantity, // Map to the correct field
+      price: Number(price_per_unit), // Map to the correct field
+      availableQuantity: Number(quantity), // Map to the correct field
       unit,
       category: category || 'vegetables', // Default to vegetables if not provided
-      images: imageUrl ? [imageUrl] : [],
-      farm,
+      images: imageUrls,
+      ...(farm ? { farm } : {}),
       location
     });
 
@@ -103,6 +123,43 @@ export const getMyProducts = async (req, res) => {
   } catch (error) {
     console.error("Error fetching products:", error);
     res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+export const updateProduct = async (req, res) => {
+  const { id } = req.params;
+  const {
+    name,
+    description,
+    price_per_unit,
+    quantity,
+    unit,
+    category,
+    location,
+    organic,
+  } = req.body;
+
+  try {
+    const product = await Product.findById(id);
+    if (!product) {
+      return res.status(404).json({ success: false, message: 'Product not found' });
+    }
+
+    // Map incoming fields to model fields if provided
+    if (typeof name !== 'undefined') product.name = name;
+    if (typeof description !== 'undefined') product.description = description;
+    if (typeof price_per_unit !== 'undefined') product.price = price_per_unit;
+    if (typeof quantity !== 'undefined') product.availableQuantity = quantity;
+    if (typeof unit !== 'undefined') product.unit = unit;
+    if (typeof category !== 'undefined') product.category = category;
+    if (typeof organic !== 'undefined') product.organic = !!organic;
+    if (typeof location !== 'undefined') product.location = location;
+
+    const saved = await product.save();
+    return res.status(200).json({ success: true, message: 'Product updated', product: saved });
+  } catch (error) {
+    console.error('Error updating product:', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 

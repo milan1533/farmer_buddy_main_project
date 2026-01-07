@@ -1,11 +1,12 @@
 import React from 'react';
 import { FiPackage, FiStar, FiCalendar, FiCheck } from 'react-icons/fi';
+import { formatINR } from '../../utils/currency';
 
 function Subscription() {
   const subscriptionPlans = [
     {
       name: 'Basic Box',
-      price: '$29.99',
+      price: 29.99,
       period: 'per week',
       features: [
         'Fresh seasonal vegetables',
@@ -17,7 +18,7 @@ function Subscription() {
     },
     {
       name: 'Premium Box',
-      price: '$49.99',
+      price: 49.99,
       period: 'per week',
       features: [
         'All Basic features',
@@ -30,7 +31,7 @@ function Subscription() {
     },
     {
       name: 'Family Box',
-      price: '$79.99',
+      price: 79.99,
       period: 'per week',
       features: [
         'All Premium features',
@@ -87,7 +88,7 @@ function Subscription() {
                 </h3>
                 <div className="mb-4">
                   <span className="text-4xl font-bold text-green-600 dark:text-green-400">
-                    {plan.price}
+                    ₹{formatINR(plan.price)}
                   </span>
                   <span className="text-gray-600 dark:text-gray-300">/{plan.period}</span>
                 </div>

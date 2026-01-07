@@ -4,6 +4,7 @@ import { FiSearch, FiFilter, FiMapPin, FiShoppingCart, FiHeart, FiStar, FiEye, F
 import { productService } from '../api';
 import { toast } from 'react-hot-toast';
 import { UseTheme } from '../../context/ThemeContext';
+import { formatINR } from '../../utils/currency';
 
 const FarmerDashboard = () => {
   const { isDarkMode, toggleTheme } = UseTheme();
@@ -441,7 +442,7 @@ const FarmerDashboard = () => {
 
                   <div className="flex items-center justify-between">
                     <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                      ${product.price_per_unit}
+                      ₹{formatINR(product.price_per_unit)}
                       <span className="text-sm text-gray-500 dark:text-gray-400">/{product.unit}</span>
                     </div>
                     <button className="flex items-center space-x-2 bg-green-600 dark:bg-green-500 text-white px-4 py-2 rounded-xl hover:bg-green-700 dark:hover:bg-green-600 transition-all duration-300 transform hover:scale-105">

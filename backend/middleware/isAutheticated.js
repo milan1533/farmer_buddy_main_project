@@ -3,7 +3,12 @@ import jwt from 'jsonwebtoken';
 
 const isAuthenticated = (req, res, next) => {
   try {
-    const token = req.cookies.token;
+    // Accept token from multiple common locations to avoid frontend desyncs
+    const cookieToken = req.cookies.token || req.cookies.accessToken || req.cookies.jwt || null;
+    const headerAuth = req.headers.authorization || req.headers.Authorization || '';
+    const bearerToken = headerAuth.startsWith('Bearer ') ? headerAuth.substring(7) : (headerAuth || null);
+    const altHeaderToken = req.headers['x-auth-token'] || req.headers['x-access-token'] || req.headers['token'] || null;
+    const token = cookieToken || bearerToken || altHeaderToken;
     // console.log(req.cookies)
     
     if (!token) {
@@ -13,7 +18,7 @@ const isAuthenticated = (req, res, next) => {
       });
     }
     
-    const secretCode = process.env.SECRET_CODE || 'your-secret-key';
+    const secretCode = process.env.JWT_SECRET || 'your-secret-key';
     const decode = jwt.verify(token, secretCode);
 
     if (!decode) {

@@ -1,5 +1,6 @@
 import axios from 'axios';
 import React, { useState } from 'react';
+import { formatINR } from '../../utils/currency';
 
 const FarmerDashboard = () => {
   const [activeSection, setActiveSection] = useState('products');
@@ -188,7 +189,7 @@ const FarmerDashboard = () => {
                     <img src={product.image} alt={product.name} className="w-full h-32 object-cover rounded mb-2" />
                     <h3 className="text-lg font-semibold">{product.name}</h3>
                     <p className="text-sm">{product.description}</p>
-                    <p>${product.price_per_unit.toFixed(2)} / {product.unit}</p>
+                    <p>₹{formatINR(product.price_per_unit)} / {product.unit}</p>
                     <p className="text-sm text-gray-500">Qty: {product.quantity} {product.unit}</p>
                     <button onClick={() => handleProductUpdate(product.id, { quantity: product.quantity + 10 })} className="mt-2 w-full bg-green-600 text-white py-1 rounded hover:bg-green-700">+10 Quantity</button>
                   </div>
@@ -215,7 +216,7 @@ const FarmerDashboard = () => {
                     <tr key={order._id} className="border-b">
                       <td className="p-3">{order._id}</td>
                       <td className="p-3">{order.items.map(i => `${i.quantity} x ${i.product}`).join(', ')}</td>
-                      <td className="p-3">${order.totalAmount.toFixed(2)}</td>
+                      <td className="p-3">₹{formatINR(order.totalAmount)}</td>
                       <td className="p-3">{order.status}</td>
                       <td className="p-3">
                         <select value={order.status} onChange={e => handleOrderStatusChange(order._id, e.target.value)} className="p-1 border rounded">

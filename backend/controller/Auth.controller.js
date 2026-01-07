@@ -107,7 +107,7 @@ export const login = async (req, res) => {
       });
     }
 
-    const token = jwt.sign({ userId: user._id }, process.env.SECRET_CODE, {
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
       expiresIn: '1d'
     });
 
@@ -122,9 +122,16 @@ export const login = async (req, res) => {
 
     console.log('Login successful for user:', user._id);
 
+    // Set cookie; secure only in production to support http://localhost during development
+    const isProd = process.env.NODE_ENV === 'production';
     return res
       .status(200)
-      .cookie("token", token, { httpOnly: true, secure: true })
+      .cookie("token", token, {
+        httpOnly: true,
+        secure: isProd,
+        sameSite: isProd ? 'none' : 'lax',
+        maxAge: 24 * 60 * 60 * 1000,
+      })
       .json({
         message: `Welcome back ${user.name}`,
         success: true,
@@ -156,3 +163,45 @@ export const logout = async (req, res) => {
     });
   }
 }
+
+export const updateProfile = async (req, res) => {
+  try {
+    const { userId, name, email, phone, address, city, zipCode } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ success: false, message: 'userId is required' });
+    }
+
+    const updates = {};
+    if (name !== undefined) updates.name = name;
+    if (email !== undefined) updates.email = email;
+    if (phone !== undefined) updates.phone = phone;
+    if (address !== undefined || city !== undefined || zipCode !== undefined) {
+      updates.location = {
+        ...(address !== undefined ? { address } : {}),
+        ...(city !== undefined ? { city } : {}),
+        ...(zipCode !== undefined ? { zipCode } : {}),
+      };
+    }
+
+    const updated = await User.findByIdAndUpdate(userId, updates, { new: true });
+    if (!updated) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Profile updated',
+      user: {
+        _id: updated._id,
+        name: updated.name,
+        email: updated.email,
+        phone: updated.phone,
+        role: updated.role,
+        location: updated.location,
+      }
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Internal Server Error', error: error.message });
+  }
+};

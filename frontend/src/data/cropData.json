@@ -1,0 +1,100 @@
+{
+  "seasons": {
+    "Kharif": {
+      "months": ["July", "August", "September", "October"],
+      "categories": {
+        "Food Grains": ["Rice", "Maize", "Jowar", "Bajra", "Ragi"],
+        "Pulses": ["Arhar/Toor", "Moong", "Urad", "Moth Bean"],
+        "Oilseeds": ["Groundnut", "Soybean", "Sesame", "Sunflower", "Castor"],
+        "Cash Crops": ["Cotton", "Jute", "Sugarcane"],
+        "Vegetables": ["Okra", "Brinjal", "Tomato", "Chilli", "Bottle Gourd", "Bitter Gourd", "Pumpkin", "Ridge Gourd"],
+        "Spices": ["Turmeric", "Ginger"]
+      }
+    },
+    "Rabi": {
+      "months": ["November", "December", "January", "February"],
+      "categories": {
+        "Food Grains": ["Wheat", "Barley", "Oats"],
+        "Pulses": ["Gram (Chana)", "Lentil (Masoor)", "Peas", "Field Pea"],
+        "Oilseeds": ["Mustard", "Rapeseed", "Linseed", "Safflower"],
+        "Vegetables": ["Potato", "Onion", "Garlic", "Cabbage", "Cauliflower", "Carrot", "Radish", "Spinach", "Fenugreek"],
+        "Fodder Crops": ["Berseem", "Lucerne", "Oats (fodder)"]
+      }
+    },
+    "Zaid": {
+      "months": ["March", "April", "May", "June"],
+      "categories": {
+        "Fruits / Vegetables": ["Watermelon", "Muskmelon", "Cucumber", "Bottle Gourd", "Bitter Gourd", "Ridge Gourd", "Sponge Gourd", "Pumpkin", "Summer Squash", "Tomato", "Okra"],
+        "Pulses": ["Moong", "Urad", "Cowpea"],
+        "Fodder Crops": ["Fodder Maize", "Fodder Sorghum", "Fodder Cowpea", "Fodder Bajra"]
+      }
+    }
+  },
+  "cropDetails": {
+    "Cotton": {
+      "seed_name": "Hybrid Cotton Seed",
+      "crop": "Cotton",
+      "season": "Kharif",
+      "soil_type": "Black soil",
+      "sowing_time": "June – July",
+      "maturity_days": "150–170 days",
+      "yield": "20–25 quintal/acre",
+      "water_requirement": "Medium",
+      "resistance": ["Bollworm", "Leaf Curl Virus"],
+      "price": "₹850 per packet",
+      "description": "High yielding hybrid cotton seed suitable for Indian climate."
+    },
+    "Rice": {
+      "seed_name": "Basmati 1121",
+      "crop": "Rice",
+      "season": "Kharif",
+      "soil_type": "Clayey loam",
+      "sowing_time": "June – July",
+      "maturity_days": "120–140 days",
+      "yield": "18–22 quintal/acre",
+      "water_requirement": "High",
+      "resistance": ["Blast", "Bacterial Blight"],
+      "price": "₹120 per kg",
+      "description": "Premium quality aromatic rice with long grains."
+    },
+    "Wheat": {
+      "seed_name": "HD 2967",
+      "crop": "Wheat",
+      "season": "Rabi",
+      "soil_type": "Loamy soil",
+      "sowing_time": "November – December",
+      "maturity_days": "140–150 days",
+      "yield": "20–24 quintal/acre",
+      "water_requirement": "Medium",
+      "resistance": ["Yellow Rust", "Leaf Blight"],
+      "price": "₹40 per kg",
+      "description": "High yielding wheat variety resistant to major rusts."
+    },
+    "Mustard": {
+      "seed_name": "Pusa Bold",
+      "crop": "Mustard",
+      "season": "Rabi",
+      "soil_type": "Sandy loam",
+      "sowing_time": "October – November",
+      "maturity_days": "110–130 days",
+      "yield": "8–12 quintal/acre",
+      "water_requirement": "Low",
+      "resistance": ["Aphids", "White Rust"],
+      "price": "₹600 per kg",
+      "description": "Bold seeded variety with high oil content."
+    },
+    "Watermelon": {
+      "seed_name": "Sugar Baby",
+      "crop": "Watermelon",
+      "season": "Zaid",
+      "soil_type": "Sandy loam",
+      "sowing_time": "February – March",
+      "maturity_days": "75–85 days",
+      "yield": "20–25 tons/acre",
+      "water_requirement": "Medium",
+      "resistance": ["Fusarium Wilt"],
+      "price": "₹3500 per 50g",
+      "description": "Very sweet, dark green skin, red flesh."
+    }
+  }
+}

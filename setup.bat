@@ -32,7 +32,7 @@ if not exist .env (
     echo Creating backend .env file...
     (
         echo MONGO_URL=mongodb://localhost:27017/farmer-buddy
-        echo SECRET_CODE=your-super-secret-jwt-key-here
+        echo JWT_SECRET=your-super-secret-jwt-key-here
         echo PORT=5000
         echo FRONTEND_URL=http://localhost:5173
     ) > .env

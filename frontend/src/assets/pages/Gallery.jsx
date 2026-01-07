@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
-import { FiGrid, FiImage, FiHeart, FiShare2, FiDownload } from 'react-icons/fi';
+import React, { useEffect, useState } from 'react';
+import { FiGrid, FiImage, FiHeart, FiShare2, FiDownload, FiTrash2, FiPlus } from 'react-icons/fi';
 
 const Gallery = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedImage, setSelectedImage] = useState(null);
+  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  const isAdmin = user?.role === 'Admin' || user?.role === 'admin';
 
   const categories = [
     { id: 'all', name: 'All Photos' },
@@ -14,7 +16,7 @@ const Gallery = () => {
     { id: 'workers', name: 'Farm Workers' }
   ];
 
-  const galleryImages = [
+  const seedImages = [
     // Farm Views
     {
       id: 1,
@@ -182,13 +184,20 @@ const Gallery = () => {
       alt: 'Young farmer',
       category: 'workers',
       title: 'Young Farmer',
-      description: 'Young generation learning farming'
-    }
+      description: 'Next generation in farming'
+    },
   ];
 
-  const filteredImages = selectedCategory === 'all' 
-    ? galleryImages 
-    : galleryImages.filter(img => img.category === selectedCategory);
+  const [images, setImages] = useState(() => {
+    const stored = localStorage.getItem('farmGallery');
+    return stored ? JSON.parse(stored) : seedImages;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('farmGallery', JSON.stringify(images));
+  }, [images]);
+
+  const [form, setForm] = useState({ title: '', category: 'farms', file: null });
 
   const openModal = (image) => {
     setSelectedImage(image);
@@ -197,6 +206,34 @@ const Gallery = () => {
   const closeModal = () => {
     setSelectedImage(null);
   };
+
+  const handleUpload = (e) => {
+    e.preventDefault();
+    if (!form.file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const newItem = {
+        id: Date.now(),
+        src: reader.result,
+        alt: form.title || 'Uploaded photo',
+        category: form.category,
+        title: form.title || 'Untitled',
+        description: ''
+      };
+      setImages([newItem, ...images]);
+      setForm({ title: '', category: 'farms', file: null });
+    };
+    reader.readAsDataURL(form.file);
+  };
+
+  const handleDelete = (id) => {
+    if (!confirm('Delete this photo?')) return;
+    setImages(images.filter((img) => img.id !== id));
+  };
+
+  const filteredImages = selectedCategory === 'all'
+    ? images
+    : images.filter(img => img.category === selectedCategory);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-all duration-300">
@@ -211,35 +248,48 @@ const Gallery = () => {
           </p>
         </div>
 
-        {/* Category Filter */}
-        <div className="flex flex-wrap justify-center gap-4 mb-8">
-          {categories.map((category) => (
+        {/* Admin Upload */}
+        {isAdmin && (
+          <form onSubmit={handleUpload} className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 mb-6">
+            <h2 className="font-semibold mb-2 flex items-center gap-2"><FiPlus/> Upload Photo</h2>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <input className="border rounded px-3 py-2 bg-white dark:bg-gray-700 md:col-span-2" placeholder="Title (optional)" value={form.title} onChange={(e)=>setForm({...form,title:e.target.value})}/>
+              <select className="border rounded px-3 py-2 bg-white dark:bg-gray-700" value={form.category} onChange={(e)=>setForm({...form,category:e.target.value})}>
+                {categories.filter(c=>c.id!=='all').map(c=> <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+              <input type="file" accept="image/*" onChange={(e)=>setForm({...form,file:e.target.files?.[0]||null})} />
+            </div>
+            <div className="mt-3">
+              <button className="px-4 py-2 rounded bg-green-600 hover:bg-green-700 text-white">Upload</button>
+            </div>
+          </form>
+        )}
+
+        {/* Filters */}
+        <div className="flex flex-wrap gap-3 mb-6">
+          {categories.map((cat) => (
             <button
-              key={category.id}
-              onClick={() => setSelectedCategory(category.id)}
-              className={`px-6 py-3 rounded-lg font-medium transition-all duration-300 ${
-                selectedCategory === category.id
-                  ? 'bg-green-600 text-white shadow-lg'
-                  : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-gray-700'
-              }`}
+              key={cat.id}
+              className={`px-4 py-2 rounded-full border transition-all ${selectedCategory === cat.id ? 'bg-green-600 text-white border-green-600' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-700'}`}
+              onClick={() => setSelectedCategory(cat.id)}
             >
-              {category.name}
+              {cat.name}
             </button>
           ))}
         </div>
 
         {/* Gallery Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredImages.map((image) => (
+          {filteredImages.map((img) => (
             <div
-              key={image.id}
+              key={img.id}
               className="group relative bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer"
-              onClick={() => openModal(image)}
+              onClick={() => openModal(img)}
             >
               <div className="relative h-64 overflow-hidden">
                 <img
-                  src={image.src}
-                  alt={image.alt}
+                  src={img.src}
+                  alt={img.alt}
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                   onError={(e) => {
                     e.target.onerror = null;
@@ -248,31 +298,19 @@ const Gallery = () => {
                 />
                 
                 {/* Overlay */}
-                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-300 flex items-center justify-center">
-                  <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 text-white text-center">
-                    <FiImage className="w-8 h-8 mx-auto mb-2" />
-                    <p className="font-semibold">{image.title}</p>
-                  </div>
-                </div>
-
-                {/* Action buttons */}
-                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
-                  <button className="bg-white dark:bg-gray-800 p-2 rounded-full shadow-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-300 mr-2">
-                    <FiHeart className="w-4 h-4 text-red-500" />
-                  </button>
-                  <button className="bg-white dark:bg-gray-800 p-2 rounded-full shadow-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-300">
-                    <FiShare2 className="w-4 h-4 text-blue-500" />
-                  </button>
+                <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                  <button className="p-2 rounded-full bg-white/90 hover:bg-white"><FiHeart /></button>
+                  <button className="p-2 rounded-full bg-white/90 hover:bg-white"><FiShare2 /></button>
+                  <button className="p-2 rounded-full bg-white/90 hover:bg-white"><FiDownload /></button>
+                  {isAdmin && (
+                    <button onClick={(e)=>{e.stopPropagation(); handleDelete(img.id);}} className="p-2 rounded-full bg-red-600 text-white hover:bg-red-700"><FiTrash2/></button>
+                  )}
                 </div>
               </div>
 
               <div className="p-4">
-                <h3 className="font-semibold text-gray-800 dark:text-white mb-1">
-                  {image.title}
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-300">
-                  {image.description}
-                </p>
+                <h3 className="font-semibold text-gray-800 dark:text-white mb-1">{img.title}</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-300">{img.description}</p>
               </div>
             </div>
           ))}
@@ -281,7 +319,7 @@ const Gallery = () => {
         {/* Image Count */}
         <div className="text-center mt-8 text-gray-600 dark:text-gray-400">
           <FiGrid className="w-5 h-5 inline mr-2" />
-          Showing {filteredImages.length} of {galleryImages.length} photos
+          Showing {filteredImages.length} of {images.length} photos
         </div>
       </div>
 

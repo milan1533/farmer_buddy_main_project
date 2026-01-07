@@ -1,38 +1,38 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import LanguageSwitcher from '../Components/LanguageSwitcher.jsx';
+import { FaLeaf, FaFileUpload, FaSpinner, FaNotesMedical, FaCheckCircle, FaExclamationTriangle, FaSeedling, FaCloudSun, FaRupeeSign, FaFlask, FaBug, FaSyringe, FaShieldAlt } from 'react-icons/fa';
 
-
-// Stable language names constant at module scope to avoid hook dependency warnings
+// Stable language names constant
 const LANGUAGE_NAMES = { en: 'English', hi: 'Hindi', gu: 'Gujarati' };
+
+const HelperButton = ({ icon: Icon, label, onClick, isActive }) => (
+  <button
+    onClick={onClick}
+    className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 shadow-sm
+      ${isActive
+        ? 'bg-green-600 text-white shadow-green-200 ring-2 ring-green-300'
+        : 'bg-white text-gray-700 hover:bg-green-50 border border-gray-200'
+      }`}
+  >
+    <Icon className={isActive ? 'text-white' : 'text-green-600'} />
+    {label}
+  </button>
+);
 
 function ARProductScanner() {
   const { t, i18n } = useTranslation();
   const [imagePreview, setImagePreview] = useState(null);
   const [uploadError, setUploadError] = useState('');
   const [isUploading, setIsUploading] = useState(false);
-  const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false);
-  const [isCareLoading, setIsCareLoading] = useState(false);
-
-  const [suggestions, setSuggestions] = useState({
-    cropName: 'Upload an image to get a name.',
-    diseaseStatus: '...',
-    suggestedMedicine: '...',
-    suggestedFertiliser: '...',
-  });
-  const [careInfo, setCareInfo] = useState({
-    title: t('results.careAndPrevention'),
-    info: t('upload.label'),
-  });
+  const [diagnosisReport, setDiagnosisReport] = useState('');
   const [currentCropName, setCurrentCropName] = useState('');
 
-  // Topics: canonical English key for AI prompts + translation key for UI
-  const TOPICS = [
-    { key: 'Weather Forecast', tKey: 'actions.weather' },
-    { key: 'Market Prices', tKey: 'actions.market' },
-    { key: 'Soil Health Report', tKey: 'actions.soil' },
-    { key: 'Pest Control Guide', tKey: 'actions.pest' },
-  ];
+  // Extra features state
+  const [activeTab, setActiveTab] = useState('diagnosis'); // diagnosis, weather, market, soil, pest
+  const [extraInfo, setExtraInfo] = useState({ loading: false, data: null, error: null });
+
+  // Refs for scrolling
+  const resultsRef = useRef(null);
 
   const fetchWithRetry = useCallback(async (url, options, retries = 3, delay = 1000) => {
     for (let i = 0; i < retries; i++) {
@@ -45,7 +45,6 @@ function ARProductScanner() {
         }
         throw new Error(`API request failed with status ${response.status}`);
       } catch (error) {
-        console.error(`Attempt ${i + 1} failed:`, error);
         if (i === retries - 1) throw error;
         await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, i)));
       }
@@ -53,111 +52,25 @@ function ARProductScanner() {
     throw new Error('Failed to fetch after multiple retries.');
   }, []);
 
-  const getAiSuggestions = useCallback(async (base64ImageData) => {
-    const langCode = i18n.language?.split('-')[0] || 'en';
-    const langName = LANGUAGE_NAMES[langCode] || 'English';
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY || 'AIzaSyAq5iHBW9DAdCsFL1NwxQIdNSnUt-2ThPc';
-    if (!apiKey) {
-      throw new Error('Missing VITE_GEMINI_API_KEY in frontend/.env');
-    }
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+  const getAiSuggestions = useCallback(async (file) => {
+    const apiUrl = 'http://localhost:5000/api/analyze-crop-disease';
 
-    const prompt = `Analyze this image of a crop or soil. Respond in ${langName}.
-
-Return STRICT JSON only (no prose) with the following KEYS IN ENGLISH exactly, but with VALUES translated into ${langName}:
-{
-  "cropName": string,
-  "diseaseStatus": string,
-  "suggestedMedicine": string,
-  "suggestedFertiliser": string,
-  "careAndPrevention": string
-}
-
-Instructions:
-1) Identify the crop name.
-2) Determine disease status (e.g., "Healthy", or "Sick - Powdery Mildew").
-3) If sick, suggest medicine/treatment; if healthy, use an appropriate equivalent of "Not Applicable" in ${langName}.
-4) Suggest a suitable fertiliser for the crop.
-5) Provide a concise paragraph of care and prevention tips.`;
-
-    const payload = {
-      contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: 'image/jpeg', data: base64ImageData } }] }],
-      generation_config: {
-        response_mime_type: 'application/json',
-        response_schema: {
-          type: 'OBJECT',
-          properties: {
-            cropName: { type: 'STRING' },
-            diseaseStatus: { type: 'STRING' },
-            suggestedMedicine: { type: 'STRING' },
-            suggestedFertiliser: { type: 'STRING' },
-            careAndPrevention: { type: 'STRING' },
-          },
-          required: ['cropName', 'diseaseStatus', 'suggestedMedicine', 'suggestedFertiliser', 'careAndPrevention'],
-        },
-      },
-    };
+    const formData = new FormData();
+    formData.append('image', file);
 
     const response = await fetchWithRetry(apiUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    const result = await response.json();
-    const candidate = result.candidates?.[0];
-    if (candidate && candidate.content?.parts?.[0]?.text) {
-      const newSuggestions = JSON.parse(candidate.content.parts[0].text);
-      setSuggestions(newSuggestions);
-      setCurrentCropName(newSuggestions.cropName);
-      setCareInfo({ title: t('results.careAndPrevention'), info: newSuggestions.careAndPrevention });
-    } else {
-      throw new Error('Invalid response from AI.');
-    }
-  }, [fetchWithRetry, i18n.language, t]);
-
-  const getAdditionalInfo = useCallback(async (option, crop) => {
-    const langCode = i18n.language?.split('-')[0] || 'en';
-    const langName = LANGUAGE_NAMES[langCode] || 'English';
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY || 'AIzaSyAq5iHBW9DAdCsFL1NwxQIdNSnUt-2ThPc';
-    if (!apiKey) {
-      throw new Error('Missing VITE_GEMINI_API_KEY in frontend/.env');
-    }
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-    const prompt = `Act as an agricultural assistant for India. Respond in ${langName}.
-
-Provide a concise, helpful summary for a farmer about "${option}" specifically for growing "${crop}".
-
-If the topic is "Weather Forecast", provide an ideal forecast for this crop's growth stages relevant to Indian climates.
-
-If it's "Market Prices", ONLY use Indian Rupees — INR (₹). Give a brief overview of current market trends and price points for this crop in India. Do not use dollars or the $ symbol. Use the ₹ symbol and write prices like ₹52/kg. If you mention multiple regions, keep them to major Indian markets.
-
-For "Soil Health Report", describe the ideal soil conditions (pH, nutrients, texture) for India.
-
-For "Pest Control Guide", list 2-3 common pests for this crop in India and suggest an organic and a chemical control method for each.`;
-
-    const payload = {
-      contents: [{ parts: [{ text: prompt }] }],
-    };
-
-    const response = await fetchWithRetry(apiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      body: formData,
     });
 
     const result = await response.json();
-    const candidate = result.candidates?.[0];
-    if (candidate && candidate.content?.parts?.[0]?.text) {
-      const raw = candidate.content.parts[0].text;
-      // Prefer INR symbols in the output
-      const cleaned = raw
-        .replace(/\$/g, '₹')
-        .replace(/\bUSD\b/gi, 'INR');
-      return cleaned;
+
+    if (result.success && result.data) {
+      return result.data;
     } else {
-      throw new Error('No content received from AI for additional info.');
+      throw new Error(result.error || 'Failed to analyze image');
     }
-  }, [fetchWithRetry, i18n.language]);
+  }, [fetchWithRetry]);
 
   const handleImageUpload = async (event) => {
     const file = event.target.files[0];
@@ -167,137 +80,276 @@ For "Pest Control Guide", list 2-3 common pests for this crop in India and sugge
     setCurrentCropName('');
     setUploadError('');
     setImagePreview(null);
-    setIsUploading(true);
-    setIsSuggestionsLoading(true);
-    setSuggestions({
-      cropName: 'Analyzing...',
-      diseaseStatus: '...',
-      suggestedMedicine: '...',
-      suggestedFertiliser: '...',
-    });
-    setCareInfo({ title: t('results.careAndPrevention'), info: 'Analyzing image...' });
+    setDiagnosisReport('');
+    setExtraInfo({ loading: false, data: null, error: null });
+    setActiveTab('diagnosis');
 
+    setIsUploading(true);
+
+    // Show preview
     const reader = new FileReader();
-    reader.onloadend = async () => {
-      const base64ImageData = reader.result.split(',')[1];
+    reader.onloadend = () => {
       setImagePreview(reader.result);
-      try {
-        await getAiSuggestions(base64ImageData);
-      } catch (error) {
-        console.error('Error getting AI suggestions:', error);
-        setUploadError('Failed to get suggestions. Please try again.');
-      } finally {
-        setIsUploading(false);
-        setIsSuggestionsLoading(false);
-      }
     };
     reader.readAsDataURL(file);
-  };
-
-  const handleSwitchForClick = async (event) => {
-    // Use canonical English key for AI prompts; show localized label in UI
-    const key = event.currentTarget.dataset.key;
-    const label = event.currentTarget.dataset.label;
-
-    if (!currentCropName) {
-      setCareInfo({
-        title: t('actions.actionRequired'),
-        info: t('actions.uploadFirst')
-      });
-      return;
-    }
-
-    setCareInfo({ title: label, info: t('actions.fetchingFor', { topic: label }) });
-    setIsCareLoading(true);
 
     try {
-      const info = await getAdditionalInfo(key, currentCropName);
-      setCareInfo({ title: label, info });
+      const data = await getAiSuggestions(file);
+      setDiagnosisReport(data.text);
+      setCurrentCropName(data.cropName || 'Unknown Crop');
+
+      // Scroll to results
+      setTimeout(() => {
+        resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+
     } catch (error) {
-      console.error('Error fetching additional info:', error);
-      setCareInfo({ title: label, info: t('actions.fetchFailed') });
+      console.error('Error getting AI suggestions:', error);
+      setUploadError('Unable to analyze image. Please try again.');
     } finally {
-      setIsCareLoading(false);
+      setIsUploading(false);
     }
   };
 
+  const parseDiagnosis = (text) => {
+    if (!text) return [];
+
+    // Split by common markdown headers or numbered lists
+    const sections = text.split(/(?=\n(?:#+\s|\d+\.\s|\*\*\s*))/g).filter(s => s.trim().length > 0);
+
+    return sections.map((section, index) => {
+      const lines = section.trim().split('\n');
+      const title = lines[0].replace(/^[#*0-9.\s]+/, '').replace(/[:*]+$/, '').trim();
+      const content = lines.slice(1).join('\n').trim();
+
+      // Assign icons based on keywords in title
+      let Icon = FaLeaf;
+      if (/disease|problem|issue/i.test(title)) Icon = FaExclamationTriangle;
+      if (/symptom/i.test(title)) Icon = FaBug;
+      if (/treatment|cure|medicine/i.test(title)) Icon = FaSyringe;
+      if (/prevention|safety/i.test(title)) Icon = FaShieldAlt;
+      if (/cause/i.test(title)) Icon = FaFlask;
+
+      return { title, content, Icon, id: index };
+    });
+  };
+
+  const getAdditionalInfo = async (topic) => {
+    if (!currentCropName) return;
+
+    setActiveTab(topic.key);
+    setExtraInfo({ loading: true, data: null, error: null });
+
+    try {
+      const langCode = i18n.language?.split('-')[0] || 'en';
+      const langName = LANGUAGE_NAMES[langCode] || 'English';
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY || 'AIzaSyDfoSjOncOEC9zfJEsLP2iQPJySLUwRPDw';
+
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+      // Map internal keys to user-friendly prompts
+      const prompts = {
+        'weather': `Provide a weather forecast suitable for growing "${currentCropName}" in India. Focus on temperature, rainfall, and humidity requirements.`,
+        'market': `What are the current market price trends for "${currentCropName}" in major Indian mandis? Use ₹ symbol.`,
+        'soil': `What is the ideal soil health report for "${currentCropName}"? Include pH, NPK levels, and texture.`,
+        'pest': `List common pests for "${currentCropName}" in India and their quick control methods.`
+      };
+
+      const prompt = `Act as an agricultural expert. Respond in ${langName}. ${prompts[topic.key]}`;
+
+      const payload = { contents: [{ parts: [{ text: prompt }] }] };
+      const response = await fetchWithRetry(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const result = await response.json();
+      const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+      if (text) {
+        setExtraInfo({ loading: false, data: text, error: null });
+      } else {
+        throw new Error('No data received');
+      }
+    } catch (err) {
+      setExtraInfo({ loading: false, data: null, error: 'Failed to fetch info.' });
+    }
+  };
+
+  const diagnosisCards = parseDiagnosis(diagnosisReport);
+
   return (
-    <div className="App p-6">
-      <header className="App-header text-center mb-8">
-        <h1 className="text-3xl font-bold">{t('header.title')}</h1>
-        <p className="text-gray-600">{t('header.subtitle')}</p>
-        <LanguageSwitcher />
-      </header>
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 font-sans text-gray-800">
 
-      <main className="main-content grid gap-8 md:grid-cols-2">
-        <section className="upload-section">
-          <div className="upload-container">
-            <label htmlFor="image-upload" className="upload-label block cursor-pointer">
-              {imagePreview ? (
-                <img src={imagePreview} alt="Preview" className="image-preview w-full rounded-md" />
-              ) : (
-                <div className="upload-placeholder flex flex-col items-center justify-center p-10 border-2 border-dashed rounded-md text-gray-500">
-                  <span className="text-3xl">📷</span>
-                  <p>{t('upload.label')}</p>
+      <div className="max-w-6xl mx-auto px-4 py-8">
+
+        {/* Header */}
+        <header className="text-center mb-10">
+          <div className="inline-flex items-center justify-center p-3 bg-green-100 rounded-full mb-4 shadow-inner">
+            <FaLeaf className="text-3xl text-green-600" />
+          </div>
+          <h1 className="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-green-700 to-emerald-600 mb-3">
+            {t('header.title') || 'Smart Crop Doctor'}
+          </h1>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto font-medium">
+            {t('header.subtitle') || 'Upload a photo of your crop to instantly identify diseases and get expert treatment advice.'}
+          </p>
+        </header>
+
+        <main className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+          {/* Left Column: Upload */}
+          <section className="lg:col-span-5 space-y-6">
+            <div className="bg-white/80 backdrop-blur-md rounded-3xl shadow-xl border border-white/50 overflow-hidden">
+              <div className="p-1 bg-gradient-to-r from-green-400 to-emerald-500" />
+              <div className="p-8">
+                <div className="upload-container relative group">
+                  <input
+                    id="image-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    disabled={isUploading}
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor="image-upload"
+                    className={`
+                        block w-full aspect-[4/3] rounded-2xl border-3 border-dashed transition-all duration-300 cursor-pointer overflow-hidden relative
+                        ${imagePreview ? 'border-green-400 bg-gray-50' : 'border-gray-300 hover:border-green-500 hover:bg-green-50 group-hover:shadow-inner'}
+                      `}
+                  >
+                    {imagePreview ? (
+                      <>
+                        <img src={imagePreview} alt="Crop" className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <p className="text-white font-semibold flex items-center gap-2">
+                            <FaFileUpload /> Change Photo
+                          </p>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 p-6 text-center">
+                        <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                          <FaFileUpload className="text-3xl text-green-600" />
+                        </div>
+                        <p className="text-lg font-medium text-gray-600">Click to Upload</p>
+                        <p className="text-sm">or drag and drop crop image here</p>
+                      </div>
+                    )}
+                  </label>
                 </div>
-              )}
-            </label>
-            <input
-              id="image-upload"
-              type="file"
-              accept="image/*"
-              onChange={handleImageUpload}
-              disabled={isUploading}
-              className="hidden"
-            />
-            {uploadError && <p className="error-message text-red-600 mt-2">{uploadError}</p>}
-          </div>
-        </section>
 
-        <section className="results-section space-y-6">
-          <div className="suggestions-container">
-            <h2 className="text-xl font-semibold mb-4">{t('results.sectionTitle')}</h2>
-            <div className="suggestions-grid grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="suggestion-card p-4 border rounded-md">
-                <h3 className="font-medium">{t('results.cropName')}</h3>
-                <p>{isSuggestionsLoading ? 'Analyzing...' : suggestions.cropName}</p>
-              </div>
-              <div className="suggestion-card p-4 border rounded-md">
-                <h3 className="font-medium">{t('results.diseaseStatus')}</h3>
-                <p>{isSuggestionsLoading ? 'Analyzing...' : suggestions.diseaseStatus}</p>
-              </div>
-              <div className="suggestion-card p-4 border rounded-md">
-                <h3 className="font-medium">{t('results.suggestedMedicine')}</h3>
-                <p>{isSuggestionsLoading ? 'Analyzing...' : suggestions.suggestedMedicine}</p>
-              </div>
-              <div className="suggestion-card p-4 border rounded-md">
-                <h3 className="font-medium">{t('results.suggestedFertiliser')}</h3>
-                <p>{isSuggestionsLoading ? 'Analyzing...' : suggestions.suggestedFertiliser}</p>
+                {/* Status Indicator */}
+                <div className="mt-6 text-center h-12">
+                  {isUploading ? (
+                    <div className="flex items-center justify-center gap-3 text-green-700 font-semibold animate-pulse">
+                      <FaSpinner className="animate-spin text-xl" />
+                      <span>Analyzing crop health...</span>
+                    </div>
+                  ) : uploadError ? (
+                    <p className="text-red-500 font-medium bg-red-50 py-2 rounded-lg">{uploadError}</p>
+                  ) : imagePreview && !diagnosisReport ? (
+                    <p className="text-gray-500 italic">Ready for analysis...</p>
+                  ) : diagnosisReport ? (
+                    <div className="flex items-center justify-center gap-2 text-green-700 font-bold bg-green-100 py-2 rounded-lg">
+                      <FaCheckCircle /> Analysis Complete
+                    </div>
+                  ) : null}
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="care-section">
-            <h2 className="text-xl font-semibold mb-2">{careInfo.title}</h2>
-            <div className="care-info p-4 border rounded-md min-h-[120px]">
-              {isCareLoading ? <p>{t('results.loading')}</p> : <p>{careInfo.info}</p>}
-            </div>
-            <div className="switch-buttons mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {TOPICS.map((topic) => (
-                <button
-                  key={topic.key}
-                  className="px-4 py-2 bg-blue-600 text-white rounded"
-                  onClick={handleSwitchForClick}
-                  data-key={topic.key}
-                  data-label={t(topic.tKey)}
-                >
-                  {t(topic.tKey)}
-                </button>
-              ))}
-            </div>
-          </div>
-        </section>
-      </main>
+            {/* Action Buttons (Only show when crop identified) */}
+            {currentCropName && !isUploading && (
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-white/50">
+                <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">More Insights for {currentCropName}</h3>
+                <div className="flex flex-wrap gap-3">
+                  <HelperButton icon={FaCloudSun} label="Weather" isActive={activeTab === 'weather'} onClick={() => getAdditionalInfo({ key: 'weather' })} />
+                  <HelperButton icon={FaRupeeSign} label="Market" isActive={activeTab === 'market'} onClick={() => getAdditionalInfo({ key: 'market' })} />
+                  <HelperButton icon={FaLeaf} label="Soil" isActive={activeTab === 'soil'} onClick={() => getAdditionalInfo({ key: 'soil' })} />
+                  <HelperButton icon={FaBug} label="Pests" isActive={activeTab === 'pest'} onClick={() => getAdditionalInfo({ key: 'pest' })} />
+                  <HelperButton icon={FaNotesMedical} label="Diagnosis" isActive={activeTab === 'diagnosis'} onClick={() => { setActiveTab('diagnosis'); setExtraInfo({ loading: false, data: null }); }} />
+                </div>
+              </div>
+            )}
+          </section>
+
+          {/* Right Column: Results */}
+          <section className="lg:col-span-7" ref={resultsRef}>
+            {activeTab === 'diagnosis' ? (
+              diagnosisReport ? (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                      <FaNotesMedical className="text-green-600" /> Diagnosis Report
+                    </h2>
+                    <span className="text-xs font-mono text-gray-400 bg-white px-2 py-1 rounded border">AI-Powered</span>
+                  </div>
+
+                  <div className="grid gap-5">
+                    {diagnosisCards.map((card, idx) => (
+                      <div key={idx} className="bg-white rounded-xl shadow-md border hover:shadow-lg transition-shadow overflow-hidden group">
+                        <div className="bg-gray-50 px-6 py-3 border-b flex items-center gap-3">
+                          <div className="p-2 bg-white rounded-lg shadow-sm text-green-600 group-hover:text-green-700 group-hover:bg-green-50 transition-colors">
+                            <card.Icon />
+                          </div>
+                          <h3 className="font-bold text-gray-700 text-lg group-hover:text-green-800 transition-colors">
+                            {card.title || 'Info'}
+                          </h3>
+                        </div>
+                        <div className="p-6">
+                          <div className="prose prose-green prose-sm max-w-none text-gray-600 leading-relaxed whitespace-pre-wrap">
+                            {card.content}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                // Empty State for results
+                <div className="h-full min-h-[400px] flex flex-col items-center justify-center bg-white/60 backdrop-blur-sm rounded-3xl border-2 border-dashed border-gray-300 text-gray-400 p-8">
+                  <FaSeedling className="text-6xl mb-4 opacity-20" />
+                  <p className="text-lg">Upload an image to see the diagnosis results here.</p>
+                </div>
+              )
+            ) : (
+              // Extra Info Tab Content
+              <div className="bg-white rounded-3xl shadow-xl overflow-hidden min-h-[400px]">
+                <div className="bg-blue-600 p-6 text-white">
+                  <h2 className="text-2xl font-bold flex items-center gap-3 capitalize">
+                    {activeTab === 'weather' && <FaCloudSun />}
+                    {activeTab === 'market' && <FaRupeeSign />}
+                    {activeTab === 'soil' && <FaLeaf />}
+                    {activeTab === 'pest' && <FaBug />}
+                    {activeTab} Report
+                  </h2>
+                </div>
+                <div className="p-8">
+                  {extraInfo.loading ? (
+                    <div className="flex flex-col items-center justify-center py-12 text-blue-600">
+                      <FaSpinner className="animate-spin text-4xl mb-4" />
+                      <p className="font-medium">Fetching latest insights...</p>
+                    </div>
+                  ) : extraInfo.error ? (
+                    <div className="text-center py-12 text-red-500">
+                      <FaExclamationTriangle className="text-4xl mb-4 mx-auto" />
+                      <p>{extraInfo.error}</p>
+                    </div>
+                  ) : extraInfo.data ? (
+                    <div className="prose prose-blue max-w-none text-gray-700 leading-loose whitespace-pre-wrap">
+                      {extraInfo.data}
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            )}
+          </section>
+
+        </main>
+      </div>
     </div>
   );
 }

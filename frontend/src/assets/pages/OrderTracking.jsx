@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { formatINR } from '../../utils/currency';
 
 const OrderTracking = () => {
   const { orderId } = useParams();
@@ -42,7 +43,7 @@ const OrderTracking = () => {
       <ul>
         {trackingInfo.items.map((item, index) => (
           <li key={index}>
-            {item.productName} - Quantity: {item.quantity} - Price at Purchase: ${item.priceAtPurchase}
+            {item.productName} - Quantity: {item.quantity} - Price at Purchase: ₹{formatINR(item.priceAtPurchase)}
           </li>
         ))}
       </ul>

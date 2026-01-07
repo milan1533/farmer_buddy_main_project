@@ -1,10 +1,13 @@
 import express from 'express';
-import { analyzeImage, getAvailableProducts, upload } from '../controller/ImageAnalysis.controller.js';
+import { analyzeImage, getAvailableProducts, analyzeCropDisease, upload } from '../controller/ImageAnalysis.controller.js';
 
 const router = express.Router();
 
 // POST /api/analyze-image - Analyze uploaded image
 router.post('/analyze-image', upload.single('image'), analyzeImage);
+
+// POST /api/analyze-crop-disease - Deep analysis using OpenRouter/Qwen
+router.post('/analyze-crop-disease', upload.single('image'), analyzeCropDisease);
 
 // GET /api/available-products - Get list of detectable products
 router.get('/available-products', getAvailableProducts);

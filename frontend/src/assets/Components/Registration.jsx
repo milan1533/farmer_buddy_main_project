@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FiUser, FiMail, FiLock, FiPhone, FiEye, FiEyeOff, FiArrowRight } from 'react-icons/fi';
 import { authService } from '../api';
@@ -16,6 +16,24 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem('user') || 'null');
+    const token = localStorage.getItem('token');
+    
+    if (user && token) {
+      // User is already logged in, redirect based on role
+      const userRole = String(user?.role || '').toLowerCase();
+      if (userRole === 'admin') {
+        navigate('/admin', { replace: true });
+      } else if (userRole === 'farmer') {
+        navigate('/farmerdashboard', { replace: true });
+      } else {
+        navigate('/marketplace', { replace: true });
+      }
+    }
+  }, [navigate]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -218,6 +236,7 @@ const Register = () => {
                   >
                     <option value="Consumer">Consumer</option>
                     <option value="Farmer">Farmer</option>
+                    <option value="Admin">Admin</option>
                     <option value="Restaurant">Restaurant</option>
                   </select>
                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">

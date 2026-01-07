@@ -1,120 +1,267 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  FiCalendar, 
-  FiTrendingUp, 
-  FiMapPin, 
-  FiThermometer, 
-  FiDroplet, 
-  FiSun,
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  FiCalendar,
+  FiTrendingUp,
   FiBarChart,
   FiClock,
-  FiDollarSign,
   FiCheckCircle,
-  FiAlertCircle
+  FiMapPin,
+  FiNavigation
 } from 'react-icons/fi';
 
 const SmartCropPlanning = () => {
-  const [selectedSeason, setSelectedSeason] = useState('spring');
-  const [selectedRegion, setSelectedRegion] = useState('northeast');
-  const [soilType, setSoilType] = useState('loamy');
-  const [weatherData, setWeatherData] = useState(null);
+  const [form, setForm] = useState({
+    state: '',
+    district: '',
+    season: 'kharif',
+    soilType: 'Loamy',
+    landArea: '',
+    irrigationSource: 'Rainfed',
+    budget: 'Medium',
+    lastCrop: '',
+    latitude: '',
+    longitude: ''
+  });
   const [cropRecommendations, setCropRecommendations] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [mapLoaded, setMapLoaded] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState(null);
+  const [mapCenter, setMapCenter] = useState([20.5937, 78.9629]); // Default: India center
+  const mapRef = useRef(null);
+  const markerRef = useRef(null);
+  const mapInstanceRef = useRef(null);
 
-  const seasons = [
-    { id: 'spring', name: 'Spring', icon: '🌸' },
-    { id: 'summer', name: 'Summer', icon: '☀️' },
-    { id: 'fall', name: 'Fall', icon: '🍂' },
-    { id: 'winter', name: 'Winter', icon: '❄️' }
-  ];
-
-  const regions = [
-    { id: 'northeast', name: 'Northeast', climate: 'Humid Continental' },
-    { id: 'southeast', name: 'Southeast', climate: 'Humid Subtropical' },
-    { id: 'midwest', name: 'Midwest', climate: 'Humid Continental' },
-    { id: 'southwest', name: 'Southwest', climate: 'Semi-arid' },
-    { id: 'west', name: 'West Coast', climate: 'Mediterranean' }
-  ];
-
-  const soilTypes = [
-    { id: 'loamy', name: 'Loamy', description: 'Well-balanced, ideal for most crops' },
-    { id: 'clay', name: 'Clay', description: 'Heavy, good water retention' },
-    { id: 'sandy', name: 'Sandy', description: 'Light, good drainage' },
-    { id: 'silty', name: 'Silty', description: 'Fertile, good moisture retention' }
-  ];
-
-  // Mock weather data - in real app, this would come from weather API
-  const mockWeatherData = {
-    temperature: { current: 72, forecast: [68, 75, 80, 72] },
-    humidity: { current: 65, forecast: [60, 70, 75, 68] },
-    rainfall: { current: 0.1, forecast: [0, 0.3, 0.8, 0.2] },
-    sunlight: { current: 8.5, forecast: [9, 8, 7, 8.5] }
-  };
-
-  // Mock crop recommendations - in real app, this would come from AI analysis
-  const mockCropRecommendations = [
-    {
-      name: 'Tomatoes',
-      variety: 'Early Girl',
-      confidence: 95,
-      profitPotential: 'High',
-      plantingTime: 'Early Spring',
-      harvestTime: 'Mid Summer',
-      estimatedYield: '15-20 lbs per plant',
-      marketDemand: 'Very High',
-      riskLevel: 'Low',
-      specialNotes: 'Excellent for early market advantage'
-    },
-    {
-      name: 'Bell Peppers',
-      variety: 'California Wonder',
-      confidence: 88,
-      profitPotential: 'Medium-High',
-      plantingTime: 'Mid Spring',
-      harvestTime: 'Late Summer',
-      estimatedYield: '8-12 peppers per plant',
-      marketDemand: 'High',
-      riskLevel: 'Low',
-      specialNotes: 'Good disease resistance, consistent yields'
-    },
-    {
-      name: 'Cucumbers',
-      variety: 'Marketmore 76',
-      confidence: 82,
-      profitPotential: 'Medium',
-      plantingTime: 'Late Spring',
-      harvestTime: 'Mid Summer',
-      estimatedYield: '10-15 cucumbers per plant',
-      marketDemand: 'Medium-High',
-      riskLevel: 'Medium',
-      specialNotes: 'Watch for cucumber beetles'
-    }
-  ];
-
+  // Initialize map
   useEffect(() => {
-    setWeatherData(mockWeatherData);
-    setCropRecommendations(mockCropRecommendations);
+    const loadMap = async () => {
+      try {
+        // Dynamically import Leaflet
+        const L = await import('leaflet');
+        await import('leaflet/dist/leaflet.css');
+
+        // Fix for default marker icon issue in Leaflet (if needed)
+        if (L.Icon.Default.prototype._getIconUrl) {
+          delete L.Icon.Default.prototype._getIconUrl;
+        }
+        L.Icon.Default.mergeOptions({
+          iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+          iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+        });
+
+        if (mapRef.current && !mapInstanceRef.current) {
+          // Create map instance
+          const map = L.map(mapRef.current).setView(mapCenter, 6);
+
+          // Add OpenStreetMap tiles
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 19
+          }).addTo(map);
+
+          // Add click handler to select location
+          map.on('click', async (e) => {
+            const { lat, lng } = e.latlng;
+            setSelectedLocation({ lat, lng });
+            setForm(prev => ({ ...prev, latitude: lat.toString(), longitude: lng.toString() }));
+
+            // Remove existing marker
+            if (markerRef.current) {
+              map.removeLayer(markerRef.current);
+            }
+
+            // Add new marker
+            const marker = L.marker([lat, lng], {
+              icon: L.divIcon({
+                className: 'custom-marker',
+                html: '<div style="background-color: #10b981; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
+                iconSize: [20, 20],
+                iconAnchor: [10, 10]
+              })
+            }).addTo(map);
+            markerRef.current = marker;
+
+            // Reverse geocode to get location details
+            await reverseGeocode(lat, lng);
+          });
+
+          mapInstanceRef.current = map;
+          setMapLoaded(true);
+        }
+      } catch (err) {
+        console.error('Error loading map:', err);
+        setError('Failed to load map. Please refresh the page.');
+      }
+    };
+
+    loadMap();
+
+    return () => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
+    };
   }, []);
 
-  const getConfidenceColor = (confidence) => {
-    if (confidence >= 90) return 'text-green-600 bg-green-100';
-    if (confidence >= 80) return 'text-blue-600 bg-blue-100';
-    if (confidence >= 70) return 'text-yellow-600 bg-yellow-100';
-    return 'text-red-600 bg-red-100';
+  // Get user's current location
+  const getCurrentLocation = async () => {
+    if (navigator.geolocation) {
+      setLoading(true);
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          try {
+            const { latitude, longitude } = position.coords;
+            setMapCenter([latitude, longitude]);
+            setSelectedLocation({ lat: latitude, lng: longitude });
+            setForm(prev => ({ ...prev, latitude: latitude.toString(), longitude: longitude.toString() }));
+
+            // Update map view
+            if (mapInstanceRef.current) {
+              mapInstanceRef.current.setView([latitude, longitude], 12);
+
+              // Remove existing marker
+              if (markerRef.current) {
+                mapInstanceRef.current.removeLayer(markerRef.current);
+              }
+
+              // Add marker at current location
+              const L = await import('leaflet');
+              const marker = L.marker([latitude, longitude], {
+                icon: L.divIcon({
+                  className: 'custom-marker',
+                  html: '<div style="background-color: #10b981; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
+                  iconSize: [20, 20],
+                  iconAnchor: [10, 10]
+                })
+              }).addTo(mapInstanceRef.current);
+              markerRef.current = marker;
+            }
+
+            // Reverse geocode
+            await reverseGeocode(latitude, longitude);
+            setLoading(false);
+          } catch (err) {
+            console.error('Error setting location:', err);
+            setError('Error setting location. Please try again.');
+            setLoading(false);
+          }
+        },
+        (error) => {
+          console.error('Geolocation error:', error);
+          setError('Unable to get your location. Please select on the map manually.');
+          setLoading(false);
+        }
+      );
+    } else {
+      setError('Geolocation is not supported by your browser.');
+    }
   };
 
-  const getProfitColor = (profit) => {
-    if (profit === 'High') return 'text-green-600 bg-green-100';
-    if (profit === 'Medium-High') return 'text-blue-600 bg-blue-100';
-    if (profit === 'Medium') return 'text-yellow-600 bg-yellow-100';
-    return 'text-red-600 bg-red-100';
+  // Reverse geocode coordinates to get state and district
+  const reverseGeocode = async (lat, lng) => {
+    try {
+      // Using Nominatim (OpenStreetMap's geocoding service)
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10&addressdetails=1`,
+        {
+          headers: {
+            'User-Agent': 'FarmerBuddy/1.0'
+          }
+        }
+      );
+
+      const data = await response.json();
+      if (data && data.address) {
+        const address = data.address;
+        const state = address.state || address.region || '';
+        const district = address.county || address.district || address.city || '';
+
+        setForm(prev => ({
+          ...prev,
+          state: state,
+          district: district
+        }));
+      }
+    } catch (err) {
+      console.error('Reverse geocoding error:', err);
+      // Don't show error to user, just log it
+    }
   };
 
-  const getRiskColor = (risk) => {
-    if (risk === 'Low') return 'text-green-600 bg-green-100';
-    if (risk === 'Medium') return 'text-yellow-600 bg-yellow-100';
-    return 'text-red-600 bg-red-100';
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
+
+  // New state for text report
+  const [recommendationReport, setRecommendationReport] = useState('');
+
+  const getSmartRecommendations = async () => {
+    // Call our backend API
+    const apiUrl = 'http://localhost:5000/api/smart-crop-planning';
+
+    const payload = {
+      state: form.state,
+      district: form.district,
+      season: form.season,
+      soilType: form.soilType,
+      landArea: form.landArea,
+      irrigationSource: form.irrigationSource,
+      budget: form.budget,
+      lastCrop: form.lastCrop
+    };
+
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch recommendations from server');
+    }
+
+    const result = await response.json();
+
+    if (result.success && result.data) {
+      return result.data.text;
+    } else {
+      throw new Error(result.error || 'Failed to analyze');
+    }
+  };
+
+  const onSubmit = async () => {
+    // Validate required fields
+    if (!form.state || !form.district || !form.landArea) {
+      setError('Please fill in all required fields (State, District, and Land Area)');
+      return;
+    }
+
+    try {
+      setError('');
+      setLoading(true);
+      setCropRecommendations([]);
+      setRecommendationReport(''); // Reset report
+
+      const report = await getSmartRecommendations();
+      if (report) {
+        setRecommendationReport(report);
+      } else {
+        setError('No recommendations received. Please try again with different inputs.');
+      }
+    } catch (e) {
+      console.error('Error getting recommendations:', e);
+      setError(e.message || 'Failed to get AI recommendations. Please check your internet connection and try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getConfidenceColor = (confidence) => { /* retained for compatibility or removal */ return ''; };
+  const getProfitColor = (profit) => { return ''; };
+  const getRiskColor = (risk) => { return ''; };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-all duration-300">
@@ -129,284 +276,226 @@ const SmartCropPlanning = () => {
           </p>
         </div>
 
-        {/* Input Controls */}
+        {/* Location Map Section */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 mb-8 shadow-lg">
-          <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-6">
-            Configure Your Growing Conditions
-          </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Season Selection */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                Growing Season
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                {seasons.map((season) => (
-                  <button
-                    key={season.id}
-                    onClick={() => setSelectedSeason(season.id)}
-                    className={`p-3 rounded-xl border-2 transition-all duration-200 ${
-                      selectedSeason === season.id
-                        ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
-                        : 'border-gray-200 dark:border-gray-600 hover:border-green-300'
-                    }`}
-                  >
-                    <div className="text-2xl mb-1">{season.icon}</div>
-                    <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      {season.name}
-                    </div>
-                  </button>
-                ))}
+          {/* ... existing map code (omitted for brevity, assume logic remains if outside this replacement chunk or handled carefully) ... */}
+          {/* For this specific edit, I am targeting the entire component logic replacement mainly for onSubmit and Results */}
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-semibold text-gray-800 dark:text-white flex items-center gap-2">
+              <FiMapPin className="text-green-500" />
+              Select Your Farm Location
+            </h2>
+            {/* ... rest of map UI ... */}
+            <button
+              onClick={getCurrentLocation}
+              disabled={loading}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded-lg transition-all duration-200 text-sm font-medium"
+            >
+              <FiNavigation className="w-4 h-4" />
+              Use My Location
+            </button>
+          </div>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            Click on the map to select your farm location, or use the "Use My Location" button. This will automatically fill in your State and District.
+          </p>
+          <div className="relative">
+            <div
+              ref={mapRef}
+              className="w-full h-96 rounded-xl border border-gray-300 dark:border-gray-600 z-0"
+              style={{ minHeight: '400px' }}
+            />
+            {/* ... map loaders ... */}
+            {!mapLoaded && (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-700 rounded-xl">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-500 mx-auto mb-4"></div>
+                  <p className="text-gray-600 dark:text-gray-400">Loading map...</p>
+                </div>
               </div>
-            </div>
+            )}
+            {selectedLocation && (
+              <div className="absolute top-4 right-4 bg-white dark:bg-gray-800 p-3 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-10">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Selected Location</p>
+                <p className="text-sm font-medium text-gray-800 dark:text-white">
+                  {selectedLocation.lat.toFixed(4)}, {selectedLocation.lng.toFixed(4)}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
 
-            {/* Region Selection */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 mb-8 shadow-lg">
+          {/* Farm Details Form (Preserved) */}
+          <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-6">
+            Enter Your Farm Details
+          </h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+            Please provide the following information that you know about your farm. All fields are required for accurate crop recommendations.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* ... Inputs ... */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                Geographic Region
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                State <span className="text-red-500">*</span>
+              </label>
+              <input
+                name="state"
+                value={form.state}
+                onChange={handleChange}
+                placeholder="e.g., Gujarat, Maharashtra, Punjab"
+                required
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              />
+              {/* ... */}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                District <span className="text-red-500">*</span>
+              </label>
+              <input
+                name="district"
+                value={form.district}
+                onChange={handleChange}
+                placeholder="e.g., Ahmedabad, Surat, Ludhiana"
+                required
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Season <span className="text-red-500">*</span>
               </label>
               <select
-                value={selectedRegion}
-                onChange={(e) => setSelectedRegion(e.target.value)}
+                name="season"
+                value={form.season}
+                onChange={handleChange}
+                required
                 className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
               >
-                {regions.map((region) => (
-                  <option key={region.id} value={region.id}>
-                    {region.name} ({region.climate})
-                  </option>
-                ))}
+                <option value="kharif">Kharif (Monsoon - June to October)</option>
+                <option value="rabi">Rabi (Winter - November to March)</option>
+                <option value="zaid">Zaid (Summer - March to June)</option>
               </select>
             </div>
-
-            {/* Soil Type */}
+            {/* ... other inputs ... */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                Soil Type
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Soil Type <span className="text-red-500">*</span>
               </label>
               <select
-                value={soilType}
-                onChange={(e) => setSoilType(e.target.value)}
+                name="soilType"
+                value={form.soilType}
+                onChange={handleChange}
+                required
                 className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
               >
-                {soilTypes.map((soil) => (
-                  <option key={soil.id} value={soil.id}>
-                    {soil.name}
-                  </option>
-                ))}
+                <option value="Loamy">Loamy (Best for most crops)</option>
+                <option value="Sandy">Sandy (Light, well-drained)</option>
+                <option value="Clay">Clay (Heavy, retains water)</option>
+                <option value="Black">Black (Rich in nutrients)</option>
+                <option value="Red">Red (Common in South India)</option>
+                <option value="Alluvial">Alluvial (River deposits)</option>
+                <option value="Silt">Silt (Fine particles)</option>
               </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Land Area <span className="text-red-500">*</span>
+              </label>
+              <input
+                name="landArea"
+                value={form.landArea}
+                onChange={handleChange}
+                type="number"
+                placeholder="e.g., 2 (in acres or hectares)"
+                required
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Irrigation Source <span className="text-red-500">*</span>
+              </label>
+              <select
+                name="irrigationSource"
+                value={form.irrigationSource}
+                onChange={handleChange}
+                required
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              >
+                <option value="Rainfed">Rainfed (Only rainfall)</option>
+                <option value="Borewell">Borewell (Groundwater)</option>
+                <option value="Canal">Canal (Government canal water)</option>
+                <option value="River">River (River water)</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Budget <span className="text-red-500">*</span>
+              </label>
+              <select
+                name="budget"
+                value={form.budget}
+                onChange={handleChange}
+                required
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              >
+                <option value="Low">Low (₹10,000 - ₹50,000 per acre)</option>
+                <option value="Medium">Medium (₹50,000 - ₹1,00,000 per acre)</option>
+                <option value="High">High (Above ₹1,00,000 per acre)</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Last Season Crop (Optional)
+              </label>
+              <input
+                name="lastCrop"
+                value={form.lastCrop}
+                onChange={handleChange}
+                placeholder="e.g., Wheat, Rice, Cotton"
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Helps with crop rotation planning</p>
             </div>
           </div>
 
           <div className="mt-6 text-center">
             <button
-              onClick={() => setLoading(true)}
-              className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg"
+              onClick={onSubmit}
+              disabled={loading || !form.state || !form.district || !form.landArea}
+              className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-8 py-3 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg"
             >
-              {loading ? 'Analyzing...' : 'Get AI Recommendations'}
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <FiClock className="animate-spin" />
+                  Analyzing farm data...
+                </span>
+              ) : (
+                'Get AI Crop Recommendations'
+              )}
             </button>
+            {error && (
+              <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Weather Dashboard */}
-        {weatherData && (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 mb-8 shadow-lg">
-            <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-6 flex items-center">
-              <FiThermometer className="mr-2 text-blue-500" />
-              Current Weather Conditions
-            </h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
-                <FiThermometer className="w-8 h-8 text-blue-500 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-blue-600">{weatherData.temperature.current}°F</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Temperature</div>
-              </div>
-              
-              <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-xl">
-                <FiDroplet className="w-8 h-8 text-green-500 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-green-600">{weatherData.humidity.current}%</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Humidity</div>
-              </div>
-              
-              <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
-                <FiDroplet className="w-8 h-8 text-purple-500 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-purple-600">{weatherData.rainfall.current}"</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Rainfall</div>
-              </div>
-              
-              <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl">
-                <FiSun className="w-8 h-8 text-yellow-500 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-yellow-600">{weatherData.sunlight.current}h</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Sunlight</div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* AI Crop Recommendations */}
-        {cropRecommendations.length > 0 && (
+        {/* AI Recommendations - Text Report */}
+        {recommendationReport && (
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 mb-8 shadow-lg">
             <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-6 flex items-center">
               <FiTrendingUp className="mr-2 text-green-500" />
-              AI-Powered Crop Recommendations
+              AI-Powered Crop Plan
             </h2>
-            
-            <div className="space-y-6">
-              {cropRecommendations.map((crop, index) => (
-                <div key={index} className="border border-gray-200 dark:border-gray-600 rounded-xl p-6 hover:shadow-lg transition-shadow duration-200">
-                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-4">
-                    <div className="flex-1">
-                      <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">
-                        {crop.name} - {crop.variety}
-                      </h3>
-                      
-                      <div className="flex flex-wrap gap-3 mb-4">
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${getConfidenceColor(crop.confidence)}`}>
-                          {crop.confidence}% Confidence
-                        </span>
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${getProfitColor(crop.profitPotential)}`}>
-                          {crop.profitPotential} Profit
-                        </span>
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${getRiskColor(crop.riskLevel)}`}>
-                          {crop.riskLevel} Risk
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <div className="lg:text-right">
-                      <div className="text-3xl font-bold text-green-600 mb-1">
-                        {crop.confidence}%
-                      </div>
-                      <div className="text-sm text-gray-500">AI Confidence</div>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                    <div className="flex items-center space-x-2">
-                      <FiCalendar className="text-blue-500" />
-                      <div>
-                        <div className="text-sm text-gray-500">Planting</div>
-                        <div className="font-medium text-gray-700 dark:text-gray-300">{crop.plantingTime}</div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <FiClock className="text-green-500" />
-                      <div>
-                        <div className="text-sm text-gray-500">Harvest</div>
-                        <div className="font-medium text-gray-700 dark:text-gray-300">{crop.harvestTime}</div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <FiBarChart className="text-purple-500" />
-                      <div>
-                        <div className="text-sm text-gray-500">Yield</div>
-                        <div className="font-medium text-gray-700 dark:text-gray-300">{crop.estimatedYield}</div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <FiTrendingUp className="text-orange-500" />
-                      <div>
-                        <div className="text-sm text-gray-500">Demand</div>
-                        <div className="font-medium text-gray-700 dark:text-gray-300">{crop.marketDemand}</div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {crop.specialNotes && (
-                    <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
-                      <div className="flex items-start space-x-2">
-                        <FiCheckCircle className="text-blue-500 mt-0.5 flex-shrink-0" />
-                        <p className="text-sm text-blue-800 dark:text-blue-200">{crop.specialNotes}</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
+            <div className="prose prose-green max-w-none dark:prose-invert whitespace-pre-wrap leading-relaxed text-gray-700 dark:text-gray-300">
+              {recommendationReport}
             </div>
           </div>
         )}
 
-        {/* Seasonal Planning Calendar */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 mb-8 shadow-lg">
-          <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-6 flex items-center">
-            <FiCalendar className="mr-2 text-purple-500" />
-            Seasonal Planting Calendar
-          </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {seasons.map((season) => (
-              <div key={season.id} className="text-center">
-                <div className="text-4xl mb-2">{season.icon}</div>
-                <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-3">
-                  {season.name}
-                </h3>
-                
-                <div className="space-y-2 text-sm">
-                  <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
-                    <div className="font-medium text-green-800 dark:text-green-200">Plant</div>
-                    <div className="text-green-600 dark:text-green-300">Tomatoes, Peppers</div>
-                  </div>
-                  
-                  <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
-                    <div className="font-medium text-blue-800 dark:text-blue-200">Harvest</div>
-                    <div className="text-blue-600 dark:text-blue-300">Lettuce, Herbs</div>
-                  </div>
-                  
-                  <div className="p-2 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
-                    <div className="font-medium text-purple-800 dark:text-purple-200">Market</div>
-                    <div className="text-purple-600 dark:text-purple-300">High Demand</div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Profit Prediction Insights */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
-          <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-6 flex items-center">
-            <FiDollarSign className="mr-2 text-green-500" />
-            Profit Prediction & Market Insights
-          </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="text-center p-6 bg-gradient-to-br from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-xl">
-              <div className="text-3xl font-bold text-green-600 mb-2">$2,400</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">Estimated Revenue</div>
-              <div className="text-xs text-green-600">+15% vs last season</div>
-            </div>
-            
-            <div className="text-center p-6 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-xl">
-              <div className="text-3xl font-bold text-blue-600 mb-2">$1,680</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">Estimated Profit</div>
-              <div className="text-xs text-blue-600">+22% vs last season</div>
-            </div>
-            
-            <div className="text-center p-6 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl">
-              <div className="text-3xl font-bold text-purple-600 mb-2">70%</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">Profit Margin</div>
-              <div className="text-xs text-purple-600">+7% vs last season</div>
-            </div>
-          </div>
-          
-          <div className="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-            <div className="flex items-start space-x-2">
-              <FiAlertCircle className="text-yellow-600 mt-0.5 flex-shrink-0" />
-              <div>
-                <h4 className="font-medium text-yellow-800 dark:text-yellow-200 mb-1">
-                  Market Opportunity Alert
-                </h4>
-                <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                  Early tomatoes are showing 25% higher demand this season. Consider extending your early planting window for maximum profit potential.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

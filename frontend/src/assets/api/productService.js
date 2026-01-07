@@ -40,4 +40,14 @@ export const productService = {
       throw error.response?.data || { message: 'Failed to delete product' };
     }
   },
+
+  // Update a product
+  updateProduct: async (productId, updates) => {
+    try {
+      const response = await api.put(`/product/update/${productId}`, updates);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Failed to update product' };
+    }
+  },
 };

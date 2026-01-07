@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { 
-  FiMessageCircle, 
-  FiSend, 
-  FiUser, 
-  FiBookOpen, 
+import {
+  FiMessageCircle,
+  FiSend,
+  FiUser,
+  FiBookOpen,
   FiTrendingUp,
   FiThermometer,
   FiDroplet,
@@ -11,7 +11,11 @@ import {
   FiClock,
   FiAlertCircle,
   FiCheckCircle,
-  FiX
+  FiX,
+  FiMic,
+  FiMicOff,
+  FiVolume2,
+  FiVolumeX
 } from 'react-icons/fi';
 
 const AIFarmingChatbot = () => {
@@ -21,6 +25,26 @@ const AIFarmingChatbot = () => {
   const [chatOpen, setChatOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('general');
   const messagesEndRef = useRef(null);
+  const [inputMode, setInputMode] = useState('text'); // 'text' | 'voice'
+  const [outputVoiceOn, setOutputVoiceOn] = useState(false);
+  const recognitionRef = useRef(null);
+  const [isListening, setIsListening] = useState(false);
+
+  // Map site language (from googtrans cookie) to BCP-47 tags for Web Speech
+  const getSiteLang = () => {
+    const match = document.cookie.match(/(?:^|; )googtrans=([^;]+)/);
+    const code = match ? match[1].split('/').pop() : 'en';
+    const map = {
+      en: 'en-US',
+      hi: 'hi-IN',
+      gu: 'gu-IN',
+      ta: 'ta-IN',
+      te: 'te-IN',
+      kn: 'kn-IN',
+      ml: 'ml-IN'
+    };
+    return map[code] || 'en-US';
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -29,6 +53,19 @@ const AIFarmingChatbot = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Cleanup speech recognition on unmount
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.onresult = null;
+        recognitionRef.current.onerror = null;
+        if (typeof recognitionRef.current.stop === 'function') {
+          recognitionRef.current.stop();
+        }
+      }
+    };
+  }, []);
 
   // Pre-defined farming advice categories
   const adviceCategories = [
@@ -39,45 +76,6 @@ const AIFarmingChatbot = () => {
     { id: 'weather', name: 'Weather Impact', icon: '🌤️', color: 'bg-yellow-500' },
     { id: 'disease', name: 'Disease Management', icon: '🦠', color: 'bg-purple-500' }
   ];
-
-  // Mock AI responses based on categories
-  const getAIResponse = (message, category) => {
-    const responses = {
-      'general': [
-        "Based on your question, I recommend starting with soil testing to understand your current conditions. This will help determine the best crops for your area.",
-        "Consider implementing crop diversification to improve soil health and reduce pest pressure naturally.",
-        "Regular monitoring of your crops is essential. Check for early signs of stress, pests, or disease at least twice a week."
-      ],
-      'pest-control': [
-        "For natural pest control, consider companion planting. Marigolds can deter nematodes, and basil repels tomato hornworms.",
-        "Introduce beneficial insects like ladybugs and lacewings to control aphid populations naturally.",
-        "Use row covers to protect young plants from flying pests. Remove them when plants begin flowering for pollination."
-      ],
-      'soil-health': [
-        "Test your soil pH and nutrient levels annually. Most vegetables prefer pH 6.0-7.0.",
-        "Add organic matter like compost or aged manure to improve soil structure and water retention.",
-        "Practice no-till or minimal tillage to preserve soil structure and beneficial microorganisms."
-      ],
-      'crop-rotation': [
-        "Rotate crops by family groups. Don't plant the same family in the same spot for 3-4 years.",
-        "Follow heavy feeders (like corn) with nitrogen-fixing crops (like beans) to restore soil nutrients.",
-        "Include cover crops in your rotation to prevent soil erosion and add organic matter."
-      ],
-      'weather': [
-        "Monitor local weather forecasts and adjust planting schedules accordingly.",
-        "Use mulch to regulate soil temperature and retain moisture during dry periods.",
-        "Consider using cold frames or row covers to extend your growing season."
-      ],
-      'disease': [
-        "Remove and destroy infected plant material immediately to prevent disease spread.",
-        "Ensure proper spacing between plants for good air circulation.",
-        "Water at the base of plants to keep foliage dry and reduce fungal disease risk."
-      ]
-    };
-
-    const categoryResponses = responses[category] || responses['general'];
-    return categoryResponses[Math.floor(Math.random() * categoryResponses.length)];
-  };
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
@@ -94,19 +92,95 @@ const AIFarmingChatbot = () => {
     setInputMessage('');
     setIsTyping(true);
 
-    // Simulate AI thinking time
-    setTimeout(() => {
-      const aiResponse = getAIResponse(inputMessage, selectedCategory);
+    try {
+      // Send to backend API
+      const response = await fetch('http://localhost:5000/api/farming-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: userMessage.text,
+          chatHistory: messages.map(m => ({
+            sender: m.sender,
+            text: m.text
+          })).slice(-10) // Send last 10 messages for context
+        })
+      });
+
+      const data = await response.json();
+      let aiResponseText = "Sorry, I'm having trouble connecting to the server.";
+
+      if (data.success && data.data) {
+        aiResponseText = data.data.text;
+      }
+
       const aiMessage = {
         id: Date.now() + 1,
-        text: aiResponse,
+        text: aiResponseText,
         sender: 'ai',
         timestamp: new Date().toLocaleTimeString(),
         category: selectedCategory
       };
+
       setMessages(prev => [...prev, aiMessage]);
       setIsTyping(false);
-    }, 1500);
+
+      if (outputVoiceOn && 'speechSynthesis' in window) {
+        const utter = new SpeechSynthesisUtterance(aiResponseText);
+        utter.lang = getSiteLang();
+        const voices = window.speechSynthesis.getVoices?.() || [];
+        const v = voices.find(v => v.lang === utter.lang) || voices.find(v => v.lang?.startsWith(utter.lang.split('-')[0]));
+        if (v) utter.voice = v;
+        window.speechSynthesis.speak(utter);
+      }
+
+    } catch (error) {
+      console.error('Chatbot Error:', error);
+      setIsTyping(false);
+      setMessages(prev => [...prev, {
+        id: Date.now() + 1,
+        text: "Sorry, I couldn't reach the farming expert right now. Please check your connection.",
+        sender: 'ai',
+        timestamp: new Date().toLocaleTimeString(),
+        category: selectedCategory
+      }]);
+    }
+  };
+
+  // Voice input handling
+  const startListening = () => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) {
+      alert('Voice input not supported in this browser.');
+      return;
+    }
+    if (!recognitionRef.current) {
+      recognitionRef.current = new SR();
+      recognitionRef.current.continuous = false;
+      recognitionRef.current.interimResults = true;
+    }
+    recognitionRef.current.lang = getSiteLang();
+    recognitionRef.current.onresult = (event) => {
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          setInputMessage(prev => (prev ? prev + ' ' : '') + transcript);
+        }
+      }
+    };
+    recognitionRef.current.onerror = () => {
+      setIsListening(false);
+    };
+    if (typeof recognitionRef.current.start === 'function') {
+      recognitionRef.current.start();
+      setIsListening(true);
+    }
+  };
+
+  const stopListening = () => {
+    if (recognitionRef.current && typeof recognitionRef.current.stop === 'function') {
+      recognitionRef.current.stop();
+    }
+    setIsListening(false);
   };
 
   const handleQuickQuestion = (question, category) => {
@@ -149,11 +223,10 @@ const AIFarmingChatbot = () => {
                   <button
                     key={category.id}
                     onClick={() => setSelectedCategory(category.id)}
-                    className={`w-full p-3 rounded-xl border-2 transition-all duration-200 text-left ${
-                      selectedCategory === category.id
+                    className={`w-full p-3 rounded-xl border-2 transition-all duration-200 text-left ${selectedCategory === category.id
                         ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                         : 'border-gray-200 dark:border-gray-600 hover:border-blue-300'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center space-x-3">
                       <span className="text-2xl">{category.icon}</span>
@@ -193,7 +266,7 @@ const AIFarmingChatbot = () => {
               </h2>
               <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
                 <p className="text-sm text-green-800 dark:text-green-200">
-                  <strong>Tip:</strong> Water your plants early in the morning to reduce evaporation and fungal disease risk. 
+                  <strong>Tip:</strong> Water your plants early in the morning to reduce evaporation and fungal disease risk.
                   This allows foliage to dry quickly as temperatures rise.
                 </p>
               </div>
@@ -213,12 +286,31 @@ const AIFarmingChatbot = () => {
                     <div>
                       <h3 className="font-semibold text-gray-800 dark:text-white">AI Farming Assistant</h3>
                       <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {selectedCategory === 'general' ? 'General Farming' : 
-                         adviceCategories.find(c => c.id === selectedCategory)?.name} Expert
+                        {selectedCategory === 'general' ? 'General Farming' :
+                          adviceCategories.find(c => c.id === selectedCategory)?.name} Expert
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center gap-2">
+                    {/* Output voice toggle */}
+                    <button
+                      onClick={() => setOutputVoiceOn(v => !v)}
+                      className={`p-2 rounded-lg border ${outputVoiceOn ? 'bg-blue-50 border-blue-300 dark:bg-blue-900/30' : 'border-gray-200 dark:border-gray-600'}`}
+                      title={outputVoiceOn ? 'Voice reply: On' : 'Voice reply: Off'}
+                    >
+                      {outputVoiceOn ? <FiVolume2 /> : <FiVolumeX />}
+                    </button>
+                    {/* Input mode toggle */}
+                    <button
+                      onClick={() => {
+                        if (inputMode === 'voice') { stopListening(); setInputMode('text'); }
+                        else setInputMode('voice');
+                      }}
+                      className={`p-2 rounded-lg border ${inputMode === 'voice' ? 'bg-green-50 border-green-300 dark:bg-green-900/30' : 'border-gray-200 dark:border-gray-600'}`}
+                      title={inputMode === 'voice' ? 'Voice input: On' : 'Voice input: Off'}
+                    >
+                      {inputMode === 'voice' ? <FiMic /> : <FiMicOff />}
+                    </button>
                     <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                     <span className="text-sm text-gray-500 dark:text-gray-400">Online</span>
                   </div>
@@ -247,16 +339,14 @@ const AIFarmingChatbot = () => {
                     className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
-                      className={`max-w-xs lg:max-w-md p-3 rounded-2xl ${
-                        message.sender === 'user'
+                      className={`max-w-xs lg:max-w-md p-3 rounded-2xl ${message.sender === 'user'
                           ? 'bg-blue-500 text-white'
                           : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white'
-                      }`}
+                        }`}
                     >
                       <p className="text-sm">{message.text}</p>
-                      <p className={`text-xs mt-2 ${
-                        message.sender === 'user' ? 'text-blue-100' : 'text-gray-500 dark:text-gray-400'
-                      }`}>
+                      <p className={`text-xs mt-2 ${message.sender === 'user' ? 'text-blue-100' : 'text-gray-500 dark:text-gray-400'
+                        }`}>
                         {message.timestamp}
                       </p>
                     </div>
@@ -268,8 +358,8 @@ const AIFarmingChatbot = () => {
                     <div className="bg-gray-100 dark:bg-gray-700 p-3 rounded-2xl">
                       <div className="flex space-x-1">
                         <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                       </div>
                     </div>
                   </div>
@@ -280,15 +370,25 @@ const AIFarmingChatbot = () => {
 
               {/* Input Area */}
               <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-                <div className="flex space-x-3">
-                  <input
-                    type="text"
-                    value={inputMessage}
-                    onChange={(e) => setInputMessage(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                    placeholder="Ask about farming, pests, soil health..."
-                    className="flex-1 p-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
+                <div className="flex items-center gap-3">
+                  {inputMode === 'voice' ? (
+                    <button
+                      onClick={isListening ? stopListening : startListening}
+                      className={`px-4 py-3 rounded-xl text-white ${isListening ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}`}
+                      title={isListening ? 'Stop listening' : 'Start listening'}
+                    >
+                      {isListening ? <span className="flex items-center gap-2"><FiMicOff /> Stop</span> : <span className="flex items-center gap-2"><FiMic /> Speak</span>}
+                    </button>
+                  ) : (
+                    <input
+                      type="text"
+                      value={inputMessage}
+                      onChange={(e) => setInputMessage(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                      placeholder="Ask about farming, pests, soil health..."
+                      className="flex-1 p-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  )}
                   <button
                     onClick={handleSendMessage}
                     disabled={!inputMessage.trim()}

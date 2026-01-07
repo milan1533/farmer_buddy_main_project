@@ -1,6 +1,6 @@
-import {RouterProvider, createBrowserRouter} from 'react-router-dom';
+import {RouterProvider, createBrowserRouter, Navigate} from 'react-router-dom';
 import Home from './assets/pages/Home';
-import Subscription from './assets/pages/Subscription';
+import FarmerAssistance from './assets/pages/FarmerAssistance';
 import Order from './assets/pages/Order';
 import Orders from './assets/pages/Orders';
 import Marketplace from './assets/pages/Marketplace'
@@ -18,20 +18,46 @@ import Blog from './assets/pages/Blog';
 import Gallery from './assets/pages/Gallery';
 import Contact from './assets/pages/Contact';
 import SmartCropPlanning from './assets/pages/SmartCropPlanning';
+import AIFarmingCalendar from './assets/pages/AIFarmingCalendar';
 import AIFarmingChatbot from './assets/pages/AIFarmingChatbot';
 import ARProductScanner from './assets/pages/ARProductScanner';
 import CommunityImpactTracker from './assets/pages/CommunityImpactTracker';
+import Settings from './assets/pages/Settings';
+import { AdminLayout } from './admin/Layout';
+import AdminDashboard from './admin/Dashboard';
+import AdminUsers from './admin/Users';
+import AdminSettings from './admin/Settings';
+import AdminRoute from './admin/AdminRoute';
+import ProtectedRoute from './assets/Components/ProtectedRoute';
+import Welcome from './assets/pages/Welcome';
+import FarmingCalendar from './assets/pages/FarmingCalendar';
+import FarmerCommunity from './assets/pages/FarmerCommunity';
 
 
 export const App = ()=>{
   const router = createBrowserRouter([
     {
-    
       path:"/",
-      element:<AppLayout/>,
+      element:<Welcome/>
+    },
+    {
+      path:"/login",
+      element:<Login/>
+    },
+    {
+      path:"/register",
+      element:<Register/>
+    },
+    {
+      path:"/",
+      element:(
+        <ProtectedRoute>
+          <AppLayout/>
+        </ProtectedRoute>
+      ),
       children  : [
       {
-        path:"/",
+        path:"/home",
         element:<Home />,
       },
       {
@@ -39,8 +65,8 @@ export const App = ()=>{
        element:<Marketplace/>
       },
       {
-       path:"/subscription",
-       element:<Subscription/>
+       path:"/farmer-assistance",
+       element:<FarmerAssistance/>
       },
       {
        path:"/order",
@@ -75,12 +101,16 @@ export const App = ()=>{
         element:<Weather/>
       },
       {
-        path:"/blog",
-        element:<Blog/>
+       path:"/blog",
+       element:<Blog/>
       },
       {
-        path:"/gallery",
-        element:<Gallery/>
+        path:"/subscription",
+        element:<Navigate to="/farmer-assistance" replace />
+      },
+      {
+       path:"/gallery",
+       element:<Gallery/>
       },
       {
         path:"/contact",
@@ -89,6 +119,18 @@ export const App = ()=>{
       {
         path:"/smart-crop-planning",
         element:<SmartCropPlanning/>
+      },
+      {
+       path:"/ai-farming-calendar",
+       element:<AIFarmingCalendar/>
+      },
+      {
+       path:"/farming-calendar",
+       element:<FarmingCalendar/>
+      },
+      {
+       path:"/community",
+       element:<FarmerCommunity/>
       },
       {
         path:"/ai-farming-chatbot",
@@ -101,21 +143,40 @@ export const App = ()=>{
       {
         path:"/community-impact-tracker",
         element:<CommunityImpactTracker/>
+      },
+      {
+        path:"/settings",
+        element:<Settings/>
       }
       
 
     ]},
     {
-      path:"/login",
-      element:<Login/>
-    },
-    {
-      path:"/register",
-      element:<Register/>
+      path: "/admin",
+      element: (
+        <AdminLayout />
+      ),
+      children: [
+        { index: true, element: <AdminDashboard /> },
+        { path: "users", element: <AdminUsers /> },
+        { path: "settings", element: <AdminSettings /> },
+        { path: "products", element: <Marketplace /> },
+        { path: "services", element: <Services /> },
+        { path: "gallery", element: <Gallery /> },
+        { path: "community", element: <FarmerCommunity /> }
+      ]
     },
     {
       path:"/farmerdashboard",
-      element:<FarmerDashboard/>
+      element:(
+        <ProtectedRoute>
+          <FarmerDashboard/>
+        </ProtectedRoute>
+      )
+    },
+    {
+      path: "*",
+      element: <Navigate to="/login" replace />
     }
   ]);
 

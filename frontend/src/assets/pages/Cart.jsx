@@ -4,6 +4,7 @@ import { FiTrash2, FiShoppingBag, FiArrowRight } from 'react-icons/fi';
 import { useCart } from './CartContext';
 import { orderService } from '../api';
 import { toast } from 'react-hot-toast';
+import { formatINR } from '../../utils/currency';
 
 const Cart = () => {
   const { cart, removeFromCart, clearCart } = useCart();
@@ -111,13 +112,13 @@ const Cart = () => {
                         <div>
                           <h3 className="text-lg font-medium text-gray-800 dark:text-white">{item.name}</h3>
                           <p className="text-sm text-gray-500 dark:text-gray-400">
-                            ${item.priceAtPurchase.toFixed(2)} x {item.quantity}
+                            ₹{formatINR(item.priceAtPurchase)} x {item.quantity}
                           </p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-4">
                         <span className="text-lg font-medium text-gray-800 dark:text-white">
-                          ${(item.priceAtPurchase * item.quantity).toFixed(2)}
+                          ₹{formatINR(item.priceAtPurchase * item.quantity)}
                         </span>
                         <button
                           onClick={() => removeFromCart(item.product)}
@@ -141,15 +142,15 @@ const Cart = () => {
                 <div className="space-y-4 mb-6">
                   <div className="flex justify-between">
                     <span className="text-gray-600 dark:text-gray-300">Subtotal</span>
-                    <span className="text-gray-800 dark:text-white font-medium">${totalPrice.toFixed(2)}</span>
+                    <span className="text-gray-800 dark:text-white font-medium">₹{formatINR(totalPrice)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600 dark:text-gray-300">Shipping</span>
-                    <span className="text-gray-800 dark:text-white font-medium">$0.00</span>
+                    <span className="text-gray-800 dark:text-white font-medium">₹0.00</span>
                   </div>
                   <div className="border-t border-gray-200 dark:border-gray-700 pt-4 flex justify-between">
                     <span className="text-lg font-semibold text-gray-800 dark:text-white">Total</span>
-                    <span className="text-lg font-bold text-green-600 dark:text-green-400">${totalPrice.toFixed(2)}</span>
+                    <span className="text-lg font-bold text-green-600 dark:text-green-400">₹{formatINR(totalPrice)}</span>
                   </div>
                 </div>
 

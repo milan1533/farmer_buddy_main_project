@@ -9,6 +9,9 @@ import imageAnalysisRouter from './routes/imageAnalysis.routes.js';
 // import isAuthenticated from './middleware/isAutheticated.js';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import adminRouter from './routes/admin.routes.js';
+import aiRouter from './routes/ai.routes.js';
+import communityRouter from './routes/community.routes.js';
 
 // Load environment variables
 dotenv.config();
@@ -31,8 +34,12 @@ app.use(cors({
     const allowedOrigins = [
       'http://localhost:5173',
       'http://localhost:5174',
+      'http://localhost:5175',
+      'http://localhost:5176',
       'http://127.0.0.1:5173',
-      'http://127.0.0.1:5174'
+      'http://127.0.0.1:5174',
+      'http://127.0.0.1:5175',
+      'http://127.0.0.1:5176'
     ];
 
     if (allowedOrigins.indexOf(origin) !== -1) {
@@ -41,7 +48,9 @@ app.use(cors({
       callback(new Error('Not allowed by CORS'));
     }
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'authorization', 'X-Requested-With', 'x-auth-token', 'x-access-token']
 }));
 
 // Ensure uploads directory exists
@@ -57,6 +66,9 @@ app.use('/auth', AuthRouter);
 app.use("/product", productRoute);
 // app.use("/order", isAuthenticated, orderRouter);
 app.use("/api", imageAnalysisRouter);
+app.use('/admin', adminRouter);
+app.use('/api', aiRouter);
+app.use('/api/community', communityRouter);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

@@ -1,9 +1,31 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { FiHeart, FiGithub, FiTwitter, FiLinkedin, FiMail } from 'react-icons/fi';
 
 const Footer = () => {
   return (
-    <footer className="bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 border-t border-gray-200 dark:border-gray-700 transition-all duration-300">
+    <>
+      {/* About Section Above Footer */}
+      <section className="bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 transition-all duration-300">
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="text-center md:text-left">
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-2">Learn More About Us</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 md:mb-0">
+                Discover our mission, vision, and values that drive sustainable agriculture.
+              </p>
+            </div>
+            <Link
+              to="/about"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-all duration-300 transform hover:scale-105"
+            >
+              About Us
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <footer className="bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 border-t border-gray-200 dark:border-gray-700 transition-all duration-300">
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Company Info */}
@@ -50,8 +72,8 @@ const Footer = () => {
                 </a>
               </li>
               <li>
-                <a href="/subscription" className="hover:text-green-600 dark:hover:text-green-400 transition-colors duration-300">
-                  Subscription
+                <a href="/farmer-assistance" className="hover:text-green-600 dark:hover:text-green-400 transition-colors duration-300">
+                  Farmer Assistance
                 </a>
               </li>
               <li>
@@ -103,6 +125,7 @@ const Footer = () => {
         </div>
       </div>
     </footer>
+    </>
   );
 };
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FiMail, FiLock, FiEye, FiEyeOff, FiArrowRight, FiUserPlus, FiUser } from 'react-icons/fi';
 import { authService } from '../api';
@@ -12,6 +12,29 @@ function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const [lang, setLang] = useState('en');
+
+  const applyGoogleTranslate = (lng) => {
+    const cookieVal = `/auto/${lng}`;
+    document.cookie = `googtrans=${cookieVal}; path=/;`;
+    document.cookie = `googtrans=${cookieVal}; domain=${window.location.hostname}; path=/;`;
+    const combo = document.querySelector('select.goog-te-combo');
+    if (combo) {
+      combo.value = lng;
+      combo.dispatchEvent(new Event('change'));
+    }
+  };
+
+  // Redirect if already logged in
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem('user') || 'null');
+    const token = localStorage.getItem('token');
+    
+    if (user && token) {
+      // User is already logged in, go to main home
+      navigate('/home', { replace: true });
+    }
+  }, [navigate]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -20,10 +43,12 @@ function Login() {
     } else if (!/\S+@\S+\.\S+/.test(email)) {
       newErrors.email = 'Invalid email format';
     }
-    if (!password) {
-      newErrors.password = 'Password is required';
-    } else if (password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+    if (role !== 'Admin') {
+      if (!password) {
+        newErrors.password = 'Password is required';
+      } else if (password.length < 6) {
+        newErrors.password = 'Password must be at least 6 characters';
+      }
     }
     return newErrors;
   };
@@ -48,13 +73,8 @@ function Login() {
         localStorage.setItem('user', JSON.stringify(response.user));
         localStorage.setItem('token', response.token);
         
-        // Navigate based on user's actual role from response
-        const userRole = response.user?.role;
-        if (userRole === 'Farmer') {
-          navigate('/farmerdashboard');
-        } else {
-          navigate('/marketplace');
-        }
+        // After login, go to main home page
+        navigate('/home');
       } else {
         // Check if error indicates user doesn't exist
         const errorMsg = response.message || '';
@@ -89,7 +109,22 @@ function Login() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 flex flex-col transition-all duration-300">
       <main className="container mx-auto px-4 py-12 flex-grow flex items-center justify-center">
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-5xl grid md:grid-cols-2 gap-8 items-stretch">
+          {/* Left Image Panel - shown on md+ */}
+          <div
+            className="hidden md:block rounded-2xl shadow-xl overflow-hidden"
+            style={{
+              backgroundImage:
+                "url('https://images.unsplash.com/photo-1500937381541-dcb5f0b865a0?q=80&w=1600&auto=format&fit=crop')",
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              minHeight: '28rem'
+            }}
+          >
+            <div className="h-full w-full bg-gradient-to-tr from-green-700/30 to-blue-700/20" />
+          </div>
+          {/* End Left Image Panel */}
+          <div className="w-full max-w-md mx-auto">
           {/* Logo and Title */}
           <div className="text-center mb-8 animate-fade-in-up">
             <div className="flex items-center justify-center space-x-2 mb-4">
@@ -177,6 +212,7 @@ function Login() {
                   >
                     <option value="Consumer">Consumer</option>
                     <option value="Farmer">Farmer</option>
+                    <option value="Admin">Admin</option>
                     <option value="Restaurant">Restaurant</option>
                   </select>
                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
@@ -185,6 +221,27 @@ function Login() {
                     </svg>
                   </div>
                 </div>
+              </div>
+
+              {/* Language Selection (dropdown) */}
+              <div>
+                <label htmlFor="login-language" className="block text-gray-700 dark:text-gray-300 font-semibold mb-2">
+                  Choose language
+                </label>
+                <select
+                  id="login-language"
+                  value={lang}
+                  onChange={(e) => { setLang(e.target.value); applyGoogleTranslate(e.target.value); }}
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 focus:border-transparent transition-all duration-300"
+                >
+                  <option value="en">English</option>
+                  <option value="hi">Hindi</option>
+                  <option value="gu">Gujarati</option>
+                  <option value="ta">Tamil</option>
+                  <option value="te">Telugu</option>
+                  <option value="kn">Kannada</option>
+                  <option value="ml">Malayalam</option>
+                </select>
               </div>
 
               {/* Submit Button */}
@@ -218,6 +275,7 @@ function Login() {
               </div>
             </form>
           </div>
+        </div>
         </div>
       </main>
     </div>

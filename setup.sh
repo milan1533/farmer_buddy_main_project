@@ -29,7 +29,7 @@ if [ ! -f .env ]; then
     echo "Creating backend .env file..."
     cat > .env << EOF
 MONGO_URL=mongodb://localhost:27017/farmer-buddy
-SECRET_CODE=your-super-secret-jwt-key-here
+JWT_SECRET=your-super-secret-jwt-key-here
 PORT=5000
 FRONTEND_URL=http://localhost:5173
 EOF

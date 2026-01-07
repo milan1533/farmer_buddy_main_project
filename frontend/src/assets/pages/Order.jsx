@@ -3,6 +3,7 @@ import { FiCheckCircle, FiTruck, FiCreditCard, FiMapPin, FiCalendar, FiPackage, 
 import { useLocation, useNavigate } from 'react-router-dom';
 import { orderService } from '../api';
 import { toast } from 'react-hot-toast';
+import { formatINR } from '../../utils/currency';
 
 function OrderConfirmation() {
   const [order, setOrder] = useState(null);
@@ -246,10 +247,10 @@ function OrderConfirmation() {
                   </div>
                   <div className="text-right">
                     <p className="font-semibold text-gray-800 dark:text-white">
-                      ${(item.priceAtPurchase * item.quantity).toFixed(2)}
+                      ₹{formatINR(item.priceAtPurchase * item.quantity)}
                     </p>
                     <p className="text-sm text-gray-600 dark:text-gray-300">
-                      ${item.priceAtPurchase.toFixed(2)} each
+                      ₹{formatINR(item.priceAtPurchase)} each
                     </p>
                   </div>
                 </div>
@@ -259,7 +260,7 @@ function OrderConfirmation() {
               <div className="flex justify-between items-center">
                 <span className="text-lg font-semibold text-gray-800 dark:text-white">Total Amount</span>
                 <span className="text-2xl font-bold text-green-600 dark:text-green-400">
-                  ${order.totalAmount.toFixed(2)}
+                  ₹{formatINR(order.totalAmount)}
                 </span>
               </div>
             </div>

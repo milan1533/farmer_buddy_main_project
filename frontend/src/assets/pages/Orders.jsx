@@ -3,6 +3,7 @@ import { FiShoppingBag, FiCalendar, FiClock, FiChevronRight, FiSearch } from 're
 import { useNavigate } from 'react-router-dom';
 import { orderService } from '../api';
 import { toast } from 'react-hot-toast';
+import { formatINR } from '../../utils/currency';
 
 function Orders() {
   const [orders, setOrders] = useState([]);
@@ -186,7 +187,7 @@ function Orders() {
                         </div>
                         <div className="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400 sm:mt-0">
                           <span className="font-medium text-gray-900 dark:text-white">
-                            ${order.totalAmount.toFixed(2)}
+                            ₹{formatINR(order.totalAmount)}
                           </span>
                         </div>
                       </div>
