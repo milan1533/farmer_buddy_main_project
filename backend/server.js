@@ -46,7 +46,7 @@ app.use(cors({
       'http://127.0.0.1:5176'
     ];
 
-    if (allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('.ngrok-free.app')) {
+    if (allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('.ngrok-free.app') || origin.endsWith('.vercel.app')) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
