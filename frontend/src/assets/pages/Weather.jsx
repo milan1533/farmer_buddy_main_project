@@ -101,7 +101,7 @@ const Weather = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 text-white">
-      <main className="container mx-auto px-4 py-10">
+      <main className="container mx-auto px-4 pt-28 pb-10">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="text-xl font-semibold tracking-wide">Weather.</div>
@@ -151,10 +151,10 @@ const Weather = () => {
             {/* Hourly timeline */}
             <div className="mt-6">
               <div className="flex items-center gap-4 text-sm">
-                <button onClick={()=>setHourTab('temp')} className={`pb-2 ${hourTab==='temp' ? 'text-white border-b-2 border-teal-400' : 'text-white/60'}`}>Temperature</button>
-                <button onClick={()=>setHourTab('wind')} className={`pb-2 ${hourTab==='wind' ? 'text-white border-b-2 border-teal-400' : 'text-white/60'}`}>Wind</button>
-                <button onClick={()=>setHourTab('precip')} className={`pb-2 ${hourTab==='precip' ? 'text-white border-b-2 border-teal-400' : 'text-white/60'}`}>Precipitation</button>
-                <button onClick={()=>setHourTab('humidity')} className={`pb-2 ${hourTab==='humidity' ? 'text-white border-b-2 border-teal-400' : 'text-white/60'}`}>Humidity</button>
+                <button onClick={() => setHourTab('temp')} className={`pb-2 ${hourTab === 'temp' ? 'text-white border-b-2 border-teal-400' : 'text-white/60'}`}>Temperature</button>
+                <button onClick={() => setHourTab('wind')} className={`pb-2 ${hourTab === 'wind' ? 'text-white border-b-2 border-teal-400' : 'text-white/60'}`}>Wind</button>
+                <button onClick={() => setHourTab('precip')} className={`pb-2 ${hourTab === 'precip' ? 'text-white border-b-2 border-teal-400' : 'text-white/60'}`}>Precipitation</button>
+                <button onClick={() => setHourTab('humidity')} className={`pb-2 ${hourTab === 'humidity' ? 'text-white border-b-2 border-teal-400' : 'text-white/60'}`}>Humidity</button>
               </div>
               <div className="mt-4 bg-white/5 rounded-2xl border border-white/10 p-4 overflow-x-auto">
                 <div className="grid grid-cols-12 min-w-[720px] gap-4">
@@ -163,10 +163,10 @@ const Weather = () => {
                       <div className="text-xs text-white/70">{formatHour(t)}</div>
                       <div className="my-3 text-2xl">{hourly.code[i] === 0 ? '☀️' : '🌧️'}</div>
                       <div className="text-sm font-medium">
-                        {hourTab==='temp' && `${Math.round(hourly.temp[i])}°`}
-                        {hourTab==='wind' && `${Math.round(hourly.wind[i])} km/h`}
-                        {hourTab==='precip' && `${hourly.pop[i] ?? 0}%`}
-                        {hourTab==='humidity' && `${hourly.rh[i]}%`}
+                        {hourTab === 'temp' && `${Math.round(hourly.temp[i])}°`}
+                        {hourTab === 'wind' && `${Math.round(hourly.wind[i])} km/h`}
+                        {hourTab === 'precip' && `${hourly.pop[i] ?? 0}%`}
+                        {hourTab === 'humidity' && `${hourly.rh[i]}%`}
                       </div>
                     </div>
                   ))}
@@ -186,7 +186,7 @@ const Weather = () => {
             </div>
             <div className="mt-6">
               <label className="text-white/70 text-xs">Forecast range</label>
-              <select className="mt-1 w-full bg-white/10 border border-white/10 rounded-xl px-3 py-2 text-sm" value={days} onChange={(e)=>setDays(Number(e.target.value))}>
+              <select className="mt-1 w-full bg-white/10 border border-white/10 rounded-xl px-3 py-2 text-sm" value={days} onChange={(e) => setDays(Number(e.target.value))}>
                 <option value={7}>7 days</option>
                 <option value={14}>14 days</option>
               </select>

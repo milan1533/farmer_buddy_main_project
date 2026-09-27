@@ -50,7 +50,7 @@ const Products = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-all duration-300">
-      <main className="container mx-auto px-4 py-12">
+      <main className="container mx-auto px-4 pb-12 pt-28">
         <h1 className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-white mb-6 text-center">Products & Crops</h1>
 
         {isAdmin && (
@@ -90,11 +90,10 @@ const Products = () => {
             <button
               key={t.id}
               onClick={() => setActive(t.id)}
-              className={`px-4 py-2 rounded-full border text-sm font-semibold transition-all duration-300 ${
-                active === t.id
+              className={`px-4 py-2 rounded-full border text-sm font-semibold transition-all duration-300 ${active === t.id
                   ? 'bg-green-600 text-white border-green-600'
                   : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700'
-              }`}
+                }`}
             >
               {t.label}
             </button>

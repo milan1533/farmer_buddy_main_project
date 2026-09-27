@@ -2,11 +2,10 @@
 import express from 'express'
 import AuthRouter from './routes/Auth.route.js';
 import dotenv from 'dotenv'
-import connectDB from './config/connectdb.js';
+import { connectDB } from './config/supabase.js';  // ✅ Supabase (MongoDB replaced)
 import productRoute from './routes/product.routes.js';
-// import orderRouter from './routes/order.routes.js';
+import orderRouter from './routes/order.routes.js';
 import imageAnalysisRouter from './routes/imageAnalysis.routes.js';
-// import isAuthenticated from './middleware/isAutheticated.js';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import adminRouter from './routes/admin.routes.js';
@@ -19,6 +18,11 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+app.get("/", (req, res) => {
+
+  res.end("Milan ye code nahi chalega..")
+})
 
 import path from 'path';
 import fs from 'fs';
@@ -42,7 +46,7 @@ app.use(cors({
       'http://127.0.0.1:5176'
     ];
 
-    if (allowedOrigins.indexOf(origin) !== -1) {
+    if (allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('.ngrok-free.app')) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
@@ -64,7 +68,7 @@ app.use('/uploads', express.static(uploadsDir));
 
 app.use('/auth', AuthRouter);
 app.use("/product", productRoute);
-// app.use("/order", isAuthenticated, orderRouter);
+app.use("/order", orderRouter); // Routes inside orderRouter already have isAuthenticated
 app.use("/api", imageAnalysisRouter);
 app.use('/admin', adminRouter);
 app.use('/api', aiRouter);
@@ -85,8 +89,6 @@ const startServer = async () => {
     await connectDB();
     app.listen(PORT, () => {
       console.log(`🚀 Server is Running on port ${PORT}`);
-      console.log(`📱 Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:5173'}`);
-      console.log(`🔗 Health check: http://localhost:${PORT}/health`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);

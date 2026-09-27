@@ -1,5 +1,5 @@
 import NodeCache from 'node-cache';
-import { generateJSON } from '../services/gemini.service.js';
+import { generateJSON, generateText } from '../services/gemini.service.js';
 import axios from 'axios';
 
 const cache = new NodeCache({ stdTTL: 86400 }); // 24 hours cache
@@ -246,11 +246,6 @@ export const getFarmingChat = async (req, res) => {
   try {
     const { message, chatHistory } = req.body;
 
-    const apiKey = process.env.CHATBOT_API_KEY;
-    if (!apiKey) {
-      return res.status(500).json({ success: false, error: 'Server misconfiguration: Chatbot API Key missing' });
-    }
-
     const systemPrompt = `
 You are an expert Indian farming assistant and agricultural advisor.
 
@@ -286,36 +281,20 @@ Do NOT:
 Always behave like a patient, helpful farming expert.
 `;
 
-    // messages array for the chat context
-    const messages = [
-      { role: "system", content: systemPrompt },
-      ...(chatHistory || []).map(msg => ({ role: msg.sender === 'user' ? 'user' : 'assistant', content: msg.text })),
-      { role: "user", content: message }
-    ];
+    // Construct prompt for Gemini
+    let conversation = systemPrompt + "\n\nConversation History:\n";
+    (chatHistory || []).forEach(msg => {
+      conversation += `${msg.sender === 'user' ? 'Farmer' : 'Assistant'}: ${msg.text}\n`;
+    });
+    conversation += `Farmer: ${message}\nAssistant:`;
 
-    const response = await axios.post(
-      "https://openrouter.ai/api/v1/chat/completions",
-      {
-        model: "meta-llama/llama-3.2-3b-instruct",
-        messages: messages,
-        temperature: 0.6
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": process.env.FRONTEND_URL || "http://localhost:5173",
-          "X-Title": "Farmer Buddy Chatbot",
-        },
-      }
-    );
-
-    const fullText = response.data.choices[0].message.content;
+    // Use Gemini for text generation
+    const responseText = await generateText(conversation);
 
     res.json({
       success: true,
       data: {
-        text: fullText
+        text: responseText
       }
     });
 
@@ -324,7 +303,64 @@ Always behave like a patient, helpful farming expert.
     res.status(500).json({
       success: false,
       message: "Failed to get chatbot response",
-      details: error.response?.data || error.message
+      details: error.message
+    });
+  }
+};
+
+
+// FEATURE 5: CROP ADDITIONAL INFO (Weather, Market, Soil, Pest)
+// Called by Scanner page for weather, market, soil, pest information
+export const getCropAdditionalInfo = async (req, res) => {
+  try {
+    const { cropName, infoType, language = 'en' } = req.body;
+
+    if (!cropName || !infoType) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "cropName and infoType are required" 
+      });
+    }
+
+    // Map language code to full name
+    const langName = { 'en': 'English', 'hi': 'Hindi', 'gu': 'Gujarati' }[language] || 'English';
+
+    // Map infoType to prompt
+    const prompts = {
+      'weather': `Provide a weather forecast suitable for growing "${cropName}" in India. Focus on temperature, rainfall, and humidity requirements.`,
+      'market': `What are the current market price trends for "${cropName}" in major Indian mandis? Use ₹ symbol.`,
+      'soil': `What is the ideal soil health report for "${cropName}"? Include pH, NPK levels, and texture.`,
+      'pest': `List common pests for "${cropName}" in India and their quick control methods.`
+    };
+
+    if (!prompts[infoType]) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Invalid infoType. Allowed: weather, market, soil, pest" 
+      });
+    }
+
+    const basePrompt = prompts[infoType];
+    const finalPrompt = `Act as an agricultural expert. Respond in ${langName}. ${basePrompt}`;
+
+    // Use existing Gemini service
+    const responseText = await generateText(finalPrompt);
+
+    res.json({
+      success: true,
+      data: {
+        text: responseText,
+        cropName,
+        infoType
+      }
+    });
+
+  } catch (error) {
+    console.error('Crop Additional Info API Error:', error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch information",
+      details: error.message
     });
   }
 };

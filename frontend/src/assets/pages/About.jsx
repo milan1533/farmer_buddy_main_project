@@ -3,7 +3,7 @@ import React from 'react';
 const About = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-all duration-300">
-      <main className="container mx-auto px-4 py-12">
+      <main className="container mx-auto px-4 pt-28 pb-12">
         <section className="text-center mb-10 animate-fade-in-up">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-white mb-4">About Us</h1>
           <p className="text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">We connect farmers and consumers through a modern platform that promotes fresh, sustainable agriculture with the help of AI.</p>

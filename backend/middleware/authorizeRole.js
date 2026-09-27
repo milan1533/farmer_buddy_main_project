@@ -1,6 +1,7 @@
-import { User } from '../models/user.model.js';
+// middleware/authorizeRole.js
+// ✅ MongoDB/Mongoose removed → Supabase
+import supabase from '../config/supabase.js';
 
-// Usage: router.get('/admin', isAuthenticated, authorizeRoles('admin'), handler)
 export const authorizeRoles = (...allowedRoles) => {
   return async (req, res, next) => {
     try {
@@ -11,8 +12,14 @@ export const authorizeRoles = (...allowedRoles) => {
         });
       }
 
-      const user = await User.findById(req.id).select('role');
-      if (!user) {
+      // Fetch user role from Supabase
+      const { data: user, error } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', req.id)
+        .single();
+
+      if (error || !user) {
         return res.status(404).json({
           message: 'User not found',
           success: false,
@@ -29,6 +36,7 @@ export const authorizeRoles = (...allowedRoles) => {
         });
       }
 
+      req.user = { ...req.user, role: userRole };
       next();
     } catch (error) {
       return res.status(500).json({

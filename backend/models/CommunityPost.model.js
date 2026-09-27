@@ -12,7 +12,8 @@ const CommunityPostSchema = new mongoose.Schema({
     problemType: { type: String, enum: ['Disease', 'Pest', 'Nutrition', 'Growth', 'Other', 'Success Story'], required: true },
     description: { type: String, required: true },
     mediaUrl: { type: String, default: '' }, // URL for Image/Video
-    mediaType: { type: String, enum: ['image', 'video', 'none'], default: 'none' }
+    mediaType: { type: String, enum: ['image', 'video', 'none'], default: 'none' },
+    mediaPublicId: { type: String, default: '' } // Cloudinary public_id for cleanup
   },
   metadata: {
     month: { type: String, required: true },

@@ -1,6 +1,7 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FaLeaf, FaFileUpload, FaSpinner, FaNotesMedical, FaCheckCircle, FaExclamationTriangle, FaSeedling, FaCloudSun, FaRupeeSign, FaFlask, FaBug, FaSyringe, FaShieldAlt } from 'react-icons/fa';
+import { FaLeaf, FaFileUpload, FaSpinner, FaNotesMedical, FaCheckCircle, FaExclamationTriangle, FaSeedling, FaCloudSun, FaRupeeSign, FaFlask, FaBug, FaSyringe, FaShieldAlt, FaChevronRight } from 'react-icons/fa';
+import { scannerService } from '../api';
 
 // Stable language names constant
 const LANGUAGE_NAMES = { en: 'English', hi: 'Hindi', gu: 'Gujarati' };
@@ -31,8 +32,32 @@ function ARProductScanner() {
   const [activeTab, setActiveTab] = useState('diagnosis'); // diagnosis, weather, market, soil, pest
   const [extraInfo, setExtraInfo] = useState({ loading: false, data: null, error: null });
 
+  // Recent scans state
+  const [recentScans, setRecentScans] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+
   // Refs for scrolling
   const resultsRef = useRef(null);
+
+  // Load scan history on component mount
+  useEffect(() => {
+    loadScanHistory();
+  }, []);
+
+  const loadScanHistory = async () => {
+    if (!localStorage.getItem('token')) return; // history requires auth; skip for guests
+    try {
+      setLoadingHistory(true);
+      const response = await scannerService.getScanHistory(5); // Get last 5
+      if (response.success) {
+        setRecentScans(response.data || []);
+      }
+    } catch (err) {
+      console.error('Error loading scan history:', err);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
 
   const fetchWithRetry = useCallback(async (url, options, retries = 3, delay = 1000) => {
     for (let i = 0; i < retries; i++) {
@@ -53,14 +78,21 @@ function ARProductScanner() {
   }, []);
 
   const getAiSuggestions = useCallback(async (file) => {
-    const apiUrl = 'http://localhost:5000/api/analyze-crop-disease';
+    const apiBaseUrl = import.meta.env.VITE_BASE_URL || 'http://localhost:5000';
+    const apiUrl = `${apiBaseUrl}/api/analyze-crop-disease`;
 
     const formData = new FormData();
     formData.append('image', file);
 
+    const headers = {};
+    const token = localStorage.getItem('token');
+    if (token) headers.Authorization = `Bearer ${token}`;
+
     const response = await fetchWithRetry(apiUrl, {
       method: 'POST',
       body: formData,
+      headers,
+      credentials: 'include',
     });
 
     const result = await response.json();
@@ -141,38 +173,31 @@ function ARProductScanner() {
     setExtraInfo({ loading: true, data: null, error: null });
 
     try {
+      const apiBaseUrl = import.meta.env.VITE_BASE_URL || 'http://localhost:5000';
       const langCode = i18n.language?.split('-')[0] || 'en';
-      const langName = LANGUAGE_NAMES[langCode] || 'English';
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY || 'AIzaSyDfoSjOncOEC9zfJEsLP2iQPJySLUwRPDw';
 
-      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-
-      // Map internal keys to user-friendly prompts
-      const prompts = {
-        'weather': `Provide a weather forecast suitable for growing "${currentCropName}" in India. Focus on temperature, rainfall, and humidity requirements.`,
-        'market': `What are the current market price trends for "${currentCropName}" in major Indian mandis? Use ₹ symbol.`,
-        'soil': `What is the ideal soil health report for "${currentCropName}"? Include pH, NPK levels, and texture.`,
-        'pest': `List common pests for "${currentCropName}" in India and their quick control methods.`
-      };
-
-      const prompt = `Act as an agricultural expert. Respond in ${langName}. ${prompts[topic.key]}`;
-
-      const payload = { contents: [{ parts: [{ text: prompt }] }] };
-      const response = await fetchWithRetry(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+      const response = await fetchWithRetry(
+        `${apiBaseUrl}/api/crop-info`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            cropName: currentCropName,
+            infoType: topic.key,
+            language: langCode
+          })
+        }
+      );
 
       const result = await response.json();
-      const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
 
-      if (text) {
-        setExtraInfo({ loading: false, data: text, error: null });
+      if (result.success && result.data?.text) {
+        setExtraInfo({ loading: false, data: result.data.text, error: null });
       } else {
-        throw new Error('No data received');
+        throw new Error(result.message || 'No data received');
       }
     } catch (err) {
+      console.error('Error fetching crop info:', err);
       setExtraInfo({ loading: false, data: null, error: 'Failed to fetch info.' });
     }
   };
@@ -182,7 +207,7 @@ function ARProductScanner() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 font-sans text-gray-800">
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="max-w-6xl mx-auto px-4 pt-28 pb-8">
 
         {/* Header */}
         <header className="text-center mb-10">
@@ -260,6 +285,37 @@ function ARProductScanner() {
                 </div>
               </div>
             </div>
+
+            {/* Recent Scans History */}
+            {recentScans.length > 0 && (
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-white/50">
+                <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Recent Scans</h3>
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {recentScans.map((scan) => (
+                    <button
+                      key={scan._id}
+                      onClick={() => {
+                        setDiagnosisReport(scan.analysisResult?.text || '');
+                        setCurrentCropName(scan.analysisResult?.cropName || 'Unknown');
+                        setActiveTab('diagnosis');
+                        setTimeout(() => {
+                          resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }, 100);
+                      }}
+                      className="w-full text-left p-3 rounded-lg bg-gray-50 hover:bg-green-50 transition-colors border border-gray-200"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="min-w-0">
+                          <p className="font-semibold text-gray-800 truncate">{scan.analysisResult?.cropName || 'Unknown Crop'}</p>
+                          <p className="text-xs text-gray-500">{new Date(scan.createdAt).toLocaleDateString()}</p>
+                        </div>
+                        <FaChevronRight className="text-green-600 mt-1 flex-shrink-0" />
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Action Buttons (Only show when crop identified) */}
             {currentCropName && !isUploading && (

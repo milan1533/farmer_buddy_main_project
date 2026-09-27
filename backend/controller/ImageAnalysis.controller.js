@@ -2,6 +2,9 @@ import multer from 'multer';
 import SimpleImageAnalysisService from '../services/simpleImageAnalysis.js';
 import axios from 'axios';
 import dotenv from 'dotenv';
+import crypto from 'crypto';
+import supabase from '../config/supabase.js';
+import cloudinary from '../config/cloudinary.js';
 
 dotenv.config();
 
@@ -87,6 +90,36 @@ export const analyzeCropDisease = async (req, res) => {
       return res.status(400).json({ success: false, error: 'No image file provided' });
     }
 
+    // User authentication is optional (if logged-in, we save to history; otherwise still analyze)
+    const userId = req.id || null;
+
+    // Step 1: Generate SHA-256 hash of image bytes
+    const imageHash = crypto.createHash('sha256').update(req.file.buffer).digest('hex');
+
+    // Step 2: If user logged in, check history cache
+    if (userId) {
+      const { data: existingAnalysis } = await supabase
+        .from('ai_suggestions')
+        .select('id, analysis_result')
+        .eq('user_id', userId)
+        .eq('analysis_result->>imageHash', imageHash)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (existingAnalysis) {
+        const { imageHash: _hash, ...cachedResult } = existingAnalysis.analysis_result || {};
+        return res.json({
+          success: true,
+          data: cachedResult,
+          cached: true,
+          analysisId: existingAnalysis.id,
+          message: 'Result from analysis history'
+        });
+      }
+    }
+
+    // Step 3: Call AI
     const base64Image = req.file.buffer.toString('base64');
     const apiKey = process.env.OPENROUTER_API_KEY;
 
@@ -129,7 +162,7 @@ Use clear headings and bullet points.
     const response = await axios.post(
       "https://openrouter.ai/api/v1/chat/completions",
       {
-        model: "qwen/qwen-2.5-vl-7b-instruct",
+        model: "qwen/qwen3-vl-8b-instruct",
         messages: [
           {
             role: "user",
@@ -152,24 +185,79 @@ Use clear headings and bullet points.
           "HTTP-Referer": process.env.FRONTEND_URL || "http://localhost:5173",
           "X-Title": "Farmer Buddy AI Tool",
         },
+        timeout: 180000,
       }
     );
 
     const fullText = response.data.choices[0].message.content;
 
-    // Attempt to extract crop name for further features
+    // Extract crop name (handles "Crop name: X" and markdown headings with the value on the next line)
     let cropName = "Unknown Crop";
-    const cropNameMatch = fullText.match(/Crop name[:\s\-]+([^\n\r]+)/i);
-    if (cropNameMatch && cropNameMatch[1]) {
-      cropName = cropNameMatch[1].trim();
+    const headingMatch = fullText.match(/crop\s*name[^\n:]*:(.*)/i);
+    if (headingMatch) {
+      let value = headingMatch[1].replace(/\*/g, '').trim();
+      if (!value) {
+        const rest = fullText.slice(headingMatch.index + headingMatch[0].length);
+        value = rest.split('\n').map(l => l.replace(/\*/g, '').trim()).find(l => l.length > 0) || '';
+      }
+      if (value) cropName = value;
     }
 
+    // Step 5a: Upload image to Cloudinary
+    let imageUrl = null;
+
+    try {
+      if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY) {
+        const cloudinaryResult = await cloudinary.uploader.upload(
+          `data:${req.file.mimetype};base64,${base64Image}`,
+          {
+            folder: 'farmer-buddy/scanner',
+            resource_type: 'auto',
+            use_filename: true,
+            unique_filename: false,
+          }
+        );
+        imageUrl = cloudinaryResult.secure_url;
+      }
+    } catch (cloudinaryErr) {
+      console.warn('Cloudinary upload failed, continuing without image storage:', cloudinaryErr?.message);
+    }
+
+    const analysisData = {
+      text: fullText,
+      cropName: cropName
+    };
+
+    let analysisId = null;
+
+    // Step 5b: Save history only if user is logged in (never fail the analysis for this)
+    if (userId) {
+      try {
+        const { data: savedRow, error: saveError } = await supabase
+          .from('ai_suggestions')
+          .insert({
+            user_id: userId,
+            image_url: imageUrl || '',
+            analysis_result: { ...analysisData, imageHash },
+            suggestions: [],
+          })
+          .select('id')
+          .single();
+
+        if (saveError) throw saveError;
+        analysisId = savedRow?.id || null;
+      } catch (saveErr) {
+        console.warn('Scan history save skipped:', saveErr?.message);
+      }
+    }
+
+    // Step 6: Return result
     res.json({
       success: true,
-      data: {
-        text: fullText,
-        cropName: cropName
-      }
+      data: analysisData,
+      cached: false,
+      analysisId,
+      message: userId ? 'Analysis completed and saved' : 'Analysis completed'
     });
 
   } catch (error) {
@@ -178,6 +266,111 @@ Use clear headings and bullet points.
       success: false,
       error: 'Failed to analyze crop',
       details: error.response?.data || error.message
+    });
+  }
+};
+
+// Get scan history for authenticated user
+export const getScanHistory = async (req, res) => {
+  try {
+    const userId = req.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, error: 'User not authenticated' });
+    }
+
+    const limit = Math.min(parseInt(req.query.limit) || 20, 100); // Max 100
+    const offset = parseInt(req.query.offset) || 0;
+
+    const { data: history, error } = await supabase
+      .from('ai_suggestions')
+      .select('id, image_url, analysis_result, created_at')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (error) throw error;
+
+    const { count } = await supabase
+      .from('ai_suggestions')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId);
+
+    const total = count || 0;
+    const data = (history || []).map((row) => {
+      const { imageHash, ...analysisResult } = row.analysis_result || {};
+      return {
+        _id: row.id,
+        imageHash,
+        imageUrl: row.image_url,
+        analysisResult,
+        createdAt: row.created_at,
+      };
+    });
+
+    res.json({
+      success: true,
+      data,
+      pagination: {
+        limit,
+        offset,
+        total,
+        hasMore: offset + limit < total
+      }
+    });
+
+  } catch (error) {
+    console.error('Scan history error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch scan history',
+      details: error.message
+    });
+  }
+};
+
+// Get a specific scan result by ID
+export const getScanResult = async (req, res) => {
+  try {
+    const userId = req.id;
+    const { analysisId } = req.params;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, error: 'User not authenticated' });
+    }
+
+    // Verify ownership
+    const { data: analysis, error } = await supabase
+      .from('ai_suggestions')
+      .select('id, image_url, analysis_result, created_at')
+      .eq('id', analysisId)
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!analysis) {
+      return res.status(404).json({ success: false, error: 'Analysis not found' });
+    }
+
+    const { imageHash, ...analysisResult } = analysis.analysis_result || {};
+
+    res.json({
+      success: true,
+      data: {
+        _id: analysis.id,
+        imageHash,
+        imageUrl: analysis.image_url,
+        analysisResult,
+        createdAt: analysis.created_at,
+        cached: true  // Indicate this is from history
+      }
+    });
+
+  } catch (error) {
+    console.error('Scan result error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch scan result',
+      details: error.message
     });
   }
 };

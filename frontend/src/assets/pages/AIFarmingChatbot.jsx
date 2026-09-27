@@ -69,7 +69,7 @@ const AIFarmingChatbot = () => {
 
   // Pre-defined farming advice categories
   const adviceCategories = [
-    { id: 'general', name: 'General Farming', icon: '🌾', color: 'bg-green-500' },
+    { id: 'general', name: 'General Farming', icon: '🌾', color: 'bg-primary-500' },
     { id: 'pest-control', name: 'Pest Control', icon: '🐛', color: 'bg-red-500' },
     { id: 'soil-health', name: 'Soil Health', icon: '🌱', color: 'bg-brown-500' },
     { id: 'crop-rotation', name: 'Crop Rotation', icon: '🔄', color: 'bg-blue-500' },
@@ -111,6 +111,9 @@ const AIFarmingChatbot = () => {
 
       if (data.success && data.data) {
         aiResponseText = data.data.text;
+      } else if (data.message || data.error) {
+        const detailMsg = data.details ? (typeof data.details === 'string' ? data.details : JSON.stringify(data.details)) : '';
+        aiResponseText = `Error: ${data.message || data.error} ${detailMsg}`;
       }
 
       const aiMessage = {
@@ -197,7 +200,7 @@ const AIFarmingChatbot = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-all duration-300">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 pt-28 pb-8">
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-white mb-4">
@@ -215,7 +218,7 @@ const AIFarmingChatbot = () => {
             {/* Advice Categories */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
               <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-4 flex items-center">
-                <FiBookOpen className="mr-2 text-blue-500" />
+                <FiBookOpen className="mr-2 text-primary-500" />
                 Farming Advice Categories
               </h2>
               <div className="space-y-3">
@@ -224,8 +227,8 @@ const AIFarmingChatbot = () => {
                     key={category.id}
                     onClick={() => setSelectedCategory(category.id)}
                     className={`w-full p-3 rounded-xl border-2 transition-all duration-200 text-left ${selectedCategory === category.id
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                        : 'border-gray-200 dark:border-gray-600 hover:border-blue-300'
+                      ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                      : 'border-earth-200 dark:border-gray-600 hover:border-primary-300'
                       }`}
                   >
                     <div className="flex items-center space-x-3">
@@ -242,7 +245,7 @@ const AIFarmingChatbot = () => {
             {/* Quick Questions */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
               <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-4 flex items-center">
-                <FiTrendingUp className="mr-2 text-green-500" />
+                <FiTrendingUp className="mr-2 text-primary-500" />
                 Quick Questions
               </h2>
               <div className="space-y-3">
@@ -250,7 +253,7 @@ const AIFarmingChatbot = () => {
                   <button
                     key={index}
                     onClick={() => handleQuickQuestion(question.text, question.category)}
-                    className="w-full p-3 text-left text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-all duration-200"
+                    className="w-full p-3 text-left text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-earth-50 dark:hover:bg-gray-700 rounded-lg transition-all duration-200"
                   >
                     {question.text}
                   </button>
@@ -261,11 +264,11 @@ const AIFarmingChatbot = () => {
             {/* Farming Tips */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
               <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-4 flex items-center">
-                <FiSun className="mr-2 text-green-500" />
+                <FiSun className="mr-2 text-secondary-500" />
                 Today's Farming Tip
               </h2>
-              <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                <p className="text-sm text-green-800 dark:text-green-200">
+              <div className="p-4 bg-secondary-50 dark:bg-secondary-900/20 rounded-lg">
+                <p className="text-sm text-secondary-800 dark:text-secondary-200">
                   <strong>Tip:</strong> Water your plants early in the morning to reduce evaporation and fungal disease risk.
                   This allows foliage to dry quickly as temperatures rise.
                 </p>
@@ -280,7 +283,7 @@ const AIFarmingChatbot = () => {
               <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+                    <div className="w-10 h-10 bg-primary-500 rounded-full flex items-center justify-center">
                       <FiUser className="w-6 h-6 text-white" />
                     </div>
                     <div>
@@ -295,7 +298,7 @@ const AIFarmingChatbot = () => {
                     {/* Output voice toggle */}
                     <button
                       onClick={() => setOutputVoiceOn(v => !v)}
-                      className={`p-2 rounded-lg border ${outputVoiceOn ? 'bg-blue-50 border-blue-300 dark:bg-blue-900/30' : 'border-gray-200 dark:border-gray-600'}`}
+                      className={`p-2 rounded-lg border ${outputVoiceOn ? 'bg-primary-50 border-primary-300 dark:bg-primary-900/30' : 'border-gray-200 dark:border-gray-600'}`}
                       title={outputVoiceOn ? 'Voice reply: On' : 'Voice reply: Off'}
                     >
                       {outputVoiceOn ? <FiVolume2 /> : <FiVolumeX />}
@@ -306,12 +309,12 @@ const AIFarmingChatbot = () => {
                         if (inputMode === 'voice') { stopListening(); setInputMode('text'); }
                         else setInputMode('voice');
                       }}
-                      className={`p-2 rounded-lg border ${inputMode === 'voice' ? 'bg-green-50 border-green-300 dark:bg-green-900/30' : 'border-gray-200 dark:border-gray-600'}`}
+                      className={`p-2 rounded-lg border ${inputMode === 'voice' ? 'bg-primary-50 border-primary-300 dark:bg-primary-900/30' : 'border-gray-200 dark:border-gray-600'}`}
                       title={inputMode === 'voice' ? 'Voice input: On' : 'Voice input: Off'}
                     >
                       {inputMode === 'voice' ? <FiMic /> : <FiMicOff />}
                     </button>
-                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                    <div className="w-3 h-3 bg-primary-500 rounded-full"></div>
                     <span className="text-sm text-gray-500 dark:text-gray-400">Online</span>
                   </div>
                 </div>
@@ -321,8 +324,8 @@ const AIFarmingChatbot = () => {
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {messages.length === 0 && (
                   <div className="text-center py-8">
-                    <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <FiMessageCircle className="w-8 h-8 text-blue-500" />
+                    <div className="w-16 h-16 bg-primary-100 dark:bg-primary-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <FiMessageCircle className="w-8 h-8 text-primary-500" />
                     </div>
                     <h3 className="text-lg font-medium text-gray-800 dark:text-white mb-2">
                       Welcome to AI Farming Assistant!
@@ -340,12 +343,12 @@ const AIFarmingChatbot = () => {
                   >
                     <div
                       className={`max-w-xs lg:max-w-md p-3 rounded-2xl ${message.sender === 'user'
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white'
+                        ? 'bg-primary-600 text-white'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white'
                         }`}
                     >
                       <p className="text-sm">{message.text}</p>
-                      <p className={`text-xs mt-2 ${message.sender === 'user' ? 'text-blue-100' : 'text-gray-500 dark:text-gray-400'
+                      <p className={`text-xs mt-2 ${message.sender === 'user' ? 'text-primary-100' : 'text-gray-500 dark:text-gray-400'
                         }`}>
                         {message.timestamp}
                       </p>
@@ -374,7 +377,7 @@ const AIFarmingChatbot = () => {
                   {inputMode === 'voice' ? (
                     <button
                       onClick={isListening ? stopListening : startListening}
-                      className={`px-4 py-3 rounded-xl text-white ${isListening ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}`}
+                      className={`px-4 py-3 rounded-xl text-white ${isListening ? 'bg-red-600 hover:bg-red-700' : 'bg-primary-600 hover:bg-primary-700'}`}
                       title={isListening ? 'Stop listening' : 'Start listening'}
                     >
                       {isListening ? <span className="flex items-center gap-2"><FiMicOff /> Stop</span> : <span className="flex items-center gap-2"><FiMic /> Speak</span>}
@@ -386,13 +389,13 @@ const AIFarmingChatbot = () => {
                       onChange={(e) => setInputMessage(e.target.value)}
                       onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                       placeholder="Ask about farming, pests, soil health..."
-                      className="flex-1 p-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="flex-1 p-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     />
                   )}
                   <button
                     onClick={handleSendMessage}
                     disabled={!inputMessage.trim()}
-                    className="px-6 py-3 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white rounded-xl font-medium transition-all duration-200 disabled:cursor-not-allowed"
+                    className="px-6 py-3 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 text-white rounded-xl font-medium transition-all duration-200 disabled:cursor-not-allowed"
                   >
                     <FiSend className="w-5 h-5" />
                   </button>
@@ -405,7 +408,7 @@ const AIFarmingChatbot = () => {
         {/* Floating Chat Button for Mobile */}
         <button
           onClick={() => setChatOpen(!chatOpen)}
-          className="fixed bottom-6 right-6 lg:hidden w-14 h-14 bg-blue-500 hover:bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-200 z-50"
+          className="fixed bottom-6 right-6 lg:hidden w-14 h-14 bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-200 z-50"
         >
           {chatOpen ? <FiX className="w-6 h-6" /> : <FiMessageCircle className="w-6 h-6" />}
         </button>
@@ -438,7 +441,7 @@ const AIFarmingChatbot = () => {
                   <button
                     onClick={handleSendMessage}
                     disabled={!inputMessage.trim()}
-                    className="px-4 py-3 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white rounded-xl font-medium"
+                    className="px-4 py-3 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 text-white rounded-xl font-medium"
                   >
                     <FiSend className="w-5 h-5" />
                   </button>

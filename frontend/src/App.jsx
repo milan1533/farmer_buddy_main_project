@@ -28,7 +28,7 @@ import AdminDashboard from './admin/Dashboard';
 import AdminUsers from './admin/Users';
 import AdminSettings from './admin/Settings';
 import AdminRoute from './admin/AdminRoute';
-import ProtectedRoute from './assets/Components/ProtectedRoute';
+import AuthGate from './assets/Components/ProtectedRoute';
 import Welcome from './assets/pages/Welcome';
 import FarmingCalendar from './assets/pages/FarmingCalendar';
 import FarmerCommunity from './assets/pages/FarmerCommunity';
@@ -50,11 +50,7 @@ export const App = ()=>{
     },
     {
       path:"/",
-      element:(
-        <ProtectedRoute>
-          <AppLayout/>
-        </ProtectedRoute>
-      ),
+      element: <AppLayout/>,
       children  : [
       {
         path:"/home",
@@ -169,9 +165,9 @@ export const App = ()=>{
     {
       path:"/farmerdashboard",
       element:(
-        <ProtectedRoute>
+        <AuthGate>
           <FarmerDashboard/>
-        </ProtectedRoute>
+        </AuthGate>
       )
     },
     {

@@ -1,6 +1,8 @@
-import bcrypt from 'bcryptjs'
-import jwt from 'jsonwebtoken'
-import { User } from '../models/user.model.js';
+// controller/Auth.controller.js
+// ✅ MongoDB/Mongoose removed → Supabase PostgreSQL
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import supabase from '../config/supabase.js';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -14,47 +16,58 @@ export const register = async (req, res) => {
       return res.status(400).json({
         message: "All required fields are missing",
         success: false
-      })
+      });
     }
     
-    const user = await User.findOne({ email });
-    if (user) {
+    // Check if user already exists
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', email.toLowerCase())
+      .single();
+      
+    if (existingUser) {
       return res.status(400).json({
         message: "User already Exist",
         success: false
-      })
+      });
     }
     
     const hashPassword = await bcrypt.hash(password, 10);
-
-    // Convert role to lowercase for consistency
     const normalizedRole = role.toLowerCase();
 
-    const newUser = await User.create({
-      name,
-      email,
-      phone,
-      password_hash: hashPassword,
-      role: normalizedRole,
-      location: {
-        address,
-        city,
-        zipCode
-      }
-    })
+    // Insert into Supabase PostgreSQL
+    const { data: newUser, error } = await supabase
+      .from('users')
+      .insert({
+        name,
+        email: email.toLowerCase(),
+        phone: phone || null,
+        password_hash: hashPassword,
+        role: normalizedRole,
+        location: {
+          address,
+          city,
+          zipCode
+        }
+      })
+      .select()
+      .single();
     
-    console.log('User created successfully:', newUser._id);
+    if (error) throw error;
+    
+    console.log('User created successfully:', newUser.id);
     
     return res.status(201).json({
       message: "User Created Successfully",
       success: true,
       user: {
-        _id: newUser._id,
+        _id: newUser.id,
         name: newUser.name,
         email: newUser.email,
         role: newUser.role
       }
-    })
+    });
   } catch (error) {
     console.error('Registration error:', error);
     return res.status(500).json({
@@ -63,7 +76,7 @@ export const register = async (req, res) => {
       error: error.message
     });
   }
-}
+};
 
 export const login = async (req, res) => {
   try {
@@ -78,19 +91,19 @@ export const login = async (req, res) => {
       });
     }
 
-    console.log("DONE")
+    // Find user in Supabase
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email.toLowerCase())
+      .single();
 
-  
-
-    const user = await User.findOne({ email });
-    if (!user) {
+    if (error || !user) {
       return res.status(401).json({
         message: 'Invalid email or password.',
         success: false
       });
     }
-
-    console.log("NOT")
 
     const isPasswordMatch = await bcrypt.compare(password, user.password_hash);
     if (!isPasswordMatch) {
@@ -107,12 +120,12 @@ export const login = async (req, res) => {
       });
     }
 
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
       expiresIn: '1d'
     });
 
     const responseUser = {
-      _id: user._id,
+      _id: user.id,
       name: user.name,
       email: user.email,
       phone: user.phone,
@@ -120,9 +133,8 @@ export const login = async (req, res) => {
       location: user.location,
     };
 
-    console.log('Login successful for user:', user._id);
+    console.log('Login successful for user:', user.id);
 
-    // Set cookie; secure only in production to support http://localhost during development
     const isProd = process.env.NODE_ENV === 'production';
     return res
       .status(200)
@@ -154,7 +166,7 @@ export const logout = async (req, res) => {
     return res.status(200).cookie("token", "", { maxAge: 0 }).json({
       message: "Logged out Successfully",
       success: true
-    })
+    });
   } catch (error) {
     console.error('Logout error:', error);
     return res.status(500).json({
@@ -162,7 +174,7 @@ export const logout = async (req, res) => {
       success: false
     });
   }
-}
+};
 
 export const updateProfile = async (req, res) => {
   try {
@@ -174,7 +186,7 @@ export const updateProfile = async (req, res) => {
 
     const updates = {};
     if (name !== undefined) updates.name = name;
-    if (email !== undefined) updates.email = email;
+    if (email !== undefined) updates.email = email.toLowerCase();
     if (phone !== undefined) updates.phone = phone;
     if (address !== undefined || city !== undefined || zipCode !== undefined) {
       updates.location = {
@@ -184,8 +196,14 @@ export const updateProfile = async (req, res) => {
       };
     }
 
-    const updated = await User.findByIdAndUpdate(userId, updates, { new: true });
-    if (!updated) {
+    const { data: updated, error } = await supabase
+      .from('users')
+      .update(updates)
+      .eq('id', userId)
+      .select()
+      .single();
+
+    if (error || !updated) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
@@ -193,7 +211,7 @@ export const updateProfile = async (req, res) => {
       success: true,
       message: 'Profile updated',
       user: {
-        _id: updated._id,
+        _id: updated.id,
         name: updated.name,
         email: updated.email,
         phone: updated.phone,

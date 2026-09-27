@@ -16,13 +16,13 @@ function Orders() {
     const fetchOrders = async () => {
       try {
         setIsLoading(true);
-        const response = await orderService.getAllOrders();
+        const response = await orderService.getMyOrders();
         setOrders(response.data || []);
       } catch (err) {
         console.error('Error fetching orders:', err);
         setError('Failed to load orders. Please try again.');
         toast.error('Could not load your orders');
-        
+
         // Fallback to mock data if API fails
         setOrders([
           {
@@ -50,7 +50,7 @@ function Orders() {
         setIsLoading(false);
       }
     };
-    
+
     fetchOrders();
   }, []);
 
@@ -79,7 +79,7 @@ function Orders() {
     }
   };
 
-  const filteredOrders = orders.filter(order => 
+  const filteredOrders = orders.filter(order =>
     order._id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -92,7 +92,7 @@ function Orders() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-12 pt-28 px-4 sm:px-6 lg:px-8">
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-12">
           <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white sm:text-4xl">
@@ -154,7 +154,7 @@ function Orders() {
             <ul className="divide-y divide-gray-200 dark:divide-gray-700">
               {filteredOrders.map((order) => (
                 <li key={order._id}>
-                  <div 
+                  <div
                     className="block hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
                     onClick={() => navigate(`/order?id=${order._id}`)}
                   >

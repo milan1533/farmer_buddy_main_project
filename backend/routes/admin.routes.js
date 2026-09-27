@@ -1,33 +1,52 @@
+// routes/admin.routes.js
+// ✅ MongoDB/Mongoose removed → Supabase
 import express from 'express';
-import { User } from '../models/user.model.js';
+import isAuthenticated from '../middleware/isAutheticated.js';
+import { authorizeRoles } from '../middleware/authorizeRole.js';
+import supabase from '../config/supabase.js';
 
 const adminRouter = express.Router();
 
-adminRouter.get('/overview', async (req, res) => {
+// Protected: Admin only endpoints
+adminRouter.get('/overview', isAuthenticated, authorizeRoles('admin'), async (req, res) => {
   try {
-    const totalUsers = await User.countDocuments();
-    const rolesAgg = await User.aggregate([
-      { $group: { _id: { $toLower: '$role' }, count: { $sum: 1 } } },
-    ]);
+    const { data: users, error } = await supabase
+      .from('users')
+      .select('role');
+
+    if (error) throw error;
+
+    const totalUsers = users.length;
+    const roles = users.reduce((acc, u) => {
+      const role = (u.role || 'unknown').toLowerCase();
+      acc[role] = (acc[role] || 0) + 1;
+      return acc;
+    }, {});
 
     return res.status(200).json({
       success: true,
       message: 'Admin overview',
-      data: {
-        totalUsers,
-        roles: rolesAgg.reduce((acc, r) => ({ ...acc, [r._id]: r.count }), {}),
-      },
+      data: { totalUsers, roles },
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Internal server error', error: error.message });
   }
 });
 
-// Get users list for admin panel (no auth)
-adminRouter.get('/users', async (req, res) => {
+// Protected: Admin only - Get users list
+adminRouter.get('/users', isAuthenticated, authorizeRoles('admin'), async (req, res) => {
   try {
-    const users = await User.find({}, 'name email role createdAt').sort({ createdAt: -1 });
-    return res.status(200).json({ success: true, data: users });
+    const { data: users, error } = await supabase
+      .from('users')
+      .select('id, name, email, role, created_at')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    return res.status(200).json({
+      success: true,
+      data: users.map(u => ({ ...u, _id: u.id }))
+    });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Internal server error', error: error.message });
   }
@@ -36,16 +55,22 @@ adminRouter.get('/users', async (req, res) => {
 // Public overview (no auth) for community pages
 adminRouter.get('/overview-public', async (req, res) => {
   try {
-    const totalUsers = await User.countDocuments();
-    const rolesAgg = await User.aggregate([
-      { $group: { _id: { $toLower: '$role' }, count: { $sum: 1 } } },
-    ]);
+    const { data: users, error } = await supabase
+      .from('users')
+      .select('role');
+
+    if (error) throw error;
+
+    const totalUsers = users.length;
+    const roles = users.reduce((acc, u) => {
+      const role = (u.role || 'unknown').toLowerCase();
+      acc[role] = (acc[role] || 0) + 1;
+      return acc;
+    }, {});
+
     return res.status(200).json({
       success: true,
-      data: {
-        totalUsers,
-        roles: rolesAgg.reduce((acc, r) => ({ ...acc, [r._id]: r.count }), {}),
-      },
+      data: { totalUsers, roles },
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Internal server error', error: error.message });

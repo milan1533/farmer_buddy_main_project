@@ -36,8 +36,8 @@ const FarmerDashboard = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await productService.getUserProducts();
-      setProducts(data);
+      const response = await productService.getUserProducts();
+      setProducts(response.products || []);
     } catch (err) {
       setError('Failed to fetch products');
       toast.error('Failed to load your products');
@@ -144,16 +144,16 @@ const FarmerDashboard = () => {
 
   const filteredProducts = Array.isArray(products) ? products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.description.toLowerCase().includes(searchTerm.toLowerCase());
+      product.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = filterType === 'all' || product.unit === filterType;
     const matchesLocation = filterLocation === 'all' || product.location === filterLocation;
-    
+
     return matchesSearch && matchesType && matchesLocation;
   }) : [];
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col transition-all duration-300">
-      <main className="container mx-auto px-4 py-12 flex-grow">
+      <main className="container mx-auto px-4 pb-12 pt-28 flex-grow">
         {/* Header Section */}
         <div className="flex justify-between items-center mb-16 animate-fade-in-up">
           <div>
@@ -207,7 +207,7 @@ const FarmerDashboard = () => {
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 focus:border-transparent transition-all duration-300"
                 />
               </div>
-              
+
               {/* Price */}
               <div>
                 <label className="block text-gray-700 dark:text-gray-300 font-medium mb-2">Price per Unit</label>
@@ -222,7 +222,7 @@ const FarmerDashboard = () => {
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 focus:border-transparent transition-all duration-300"
                 />
               </div>
-              
+
               {/* Quantity */}
               <div>
                 <label className="block text-gray-700 dark:text-gray-300 font-medium mb-2">Quantity</label>
@@ -236,7 +236,7 @@ const FarmerDashboard = () => {
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 focus:border-transparent transition-all duration-300"
                 />
               </div>
-              
+
               {/* Unit */}
               <div>
                 <label className="block text-gray-700 dark:text-gray-300 font-medium mb-2">Unit</label>
@@ -253,7 +253,7 @@ const FarmerDashboard = () => {
                   <option value="bunch">Bunch</option>
                 </select>
               </div>
-              
+
               {/* Location */}
               <div>
                 <label className="block text-gray-700 dark:text-gray-300 font-medium mb-2">Farm Location</label>
@@ -266,7 +266,7 @@ const FarmerDashboard = () => {
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 focus:border-transparent transition-all duration-300"
                 />
               </div>
-              
+
               {/* Image Upload */}
               <div>
                 <label className="block text-gray-700 dark:text-gray-300 font-medium mb-2">Upload Image</label>
@@ -277,7 +277,7 @@ const FarmerDashboard = () => {
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 focus:border-transparent transition-all duration-300"
                 />
               </div>
-              
+
               {/* Description */}
               <div className="md:col-span-2">
                 <label className="block text-gray-700 dark:text-gray-300 font-medium mb-2">Description</label>
@@ -290,7 +290,7 @@ const FarmerDashboard = () => {
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 focus:border-transparent transition-all duration-300"
                 ></textarea>
               </div>
-              
+
               {/* Submit Button */}
               <div className="md:col-span-2 flex justify-end">
                 <button
@@ -381,10 +381,9 @@ const FarmerDashboard = () => {
             {filteredProducts.map((product, index) => (
               <div
                 key={product.id}
-                className={`bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden group ${
-                  index === 0 ? 'animate-slide-in-left' : 
+                className={`bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden group ${index === 0 ? 'animate-slide-in-left' :
                   index === 1 ? 'animate-fade-in-up' : 'animate-slide-in-right'
-                }`}
+                  }`}
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
                 {/* Product Image */}
@@ -400,7 +399,7 @@ const FarmerDashboard = () => {
                     loading="lazy"
                   />
                   <div className="absolute top-4 right-4 flex space-x-2">
-                    <button 
+                    <button
                       onClick={() => handleDeleteProduct(product.id)}
                       className="p-2 bg-white dark:bg-gray-800 rounded-full shadow-lg hover:bg-red-100 dark:hover:bg-red-900 transition-colors duration-300"
                       title="Delete product"
@@ -421,8 +420,12 @@ const FarmerDashboard = () => {
                     </h3>
                     <div className="flex items-center space-x-1">
                       <FiStar className="w-4 h-4 text-yellow-500 fill-current" />
-                      <span className="text-sm text-gray-600 dark:text-gray-300">{product.rating}</span>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">({product.reviews})</span>
+                      <span className="text-sm text-gray-600 dark:text-gray-300">
+                        {typeof product.rating === 'object' ? product.rating.average : product.rating}
+                      </span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        ({typeof product.rating === 'object' ? product.rating.count : product.reviews || 0})
+                      </span>
                     </div>
                   </div>
 

@@ -1,132 +1,136 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FiHeart, FiGithub, FiTwitter, FiLinkedin, FiMail } from 'react-icons/fi';
+import { FiHeart, FiGithub, FiTwitter, FiLinkedin, FiMail, FiInstagram, FiFacebook } from 'react-icons/fi';
 
 const Footer = () => {
   return (
-    <>
-      {/* About Section Above Footer */}
-      <section className="bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 transition-all duration-300">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="text-center md:text-left">
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-2">Learn More About Us</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 md:mb-0">
-                Discover our mission, vision, and values that drive sustainable agriculture.
-              </p>
-            </div>
+    <footer className="bg-earth-50 dark:bg-dark-bg border-t border-earth-200 dark:border-white/10 transition-colors duration-300">
+      {/* Newsletter / CTA Section */}
+      <div className="container mx-auto px-6 py-12 border-b border-earth-200 dark:border-white/10">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-8 bg-primary-900 rounded-3xl p-8 md:p-12 relative overflow-hidden">
+          {/* Background decoration */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary-800 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 opacity-50" />
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary-600 rounded-full blur-3xl translate-y-1/2 -translate-x-1/3 opacity-50" />
+
+          <div className="relative z-10 md:w-1/2 text-center md:text-left">
+            <h2 className="text-2xl md:text-3xl font-display font-bold text-white mb-4">
+              Cultivating a Better Future
+            </h2>
+            <p className="text-primary-100 text-lg leading-relaxed">
+              Join our community of sustainable farmers and health-conscious consumers today.
+            </p>
+          </div>
+          <div className="relative z-10 flex gap-4">
+            <Link
+              to="/login"
+              className="inline-flex items-center justify-center px-8 py-4 bg-white text-primary-900 rounded-xl font-bold hover:bg-primary-50 transition-all transform hover:-translate-y-1 shadow-lg"
+            >
+              Get Started
+            </Link>
             <Link
               to="/about"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-all duration-300 transform hover:scale-105"
+              className="inline-flex items-center justify-center px-8 py-4 bg-primary-800 text-white rounded-xl font-bold hover:bg-primary-700 transition-all border border-primary-700"
             >
-              About Us
+              Learn More
             </Link>
           </div>
         </div>
-      </section>
+      </div>
 
-      <footer className="bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 border-t border-gray-200 dark:border-gray-700 transition-all duration-300">
-      <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          {/* Company Info */}
-          <div className="col-span-1 md:col-span-2">
-            <div className="flex items-center space-x-2 mb-4">
-              <div className="w-8 h-8 bg-green-600 dark:bg-green-500 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">F</span>
+      <div className="container mx-auto px-6 py-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
+          {/* Brand Column */}
+          <div className="space-y-6">
+            <Link to="/" className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-700 rounded-xl flex items-center justify-center shadow-lg">
+                <span className="text-white font-display font-bold text-xl">F</span>
               </div>
-              <h3 className="text-xl font-bold bg-gradient-to-r from-green-600 to-blue-600 dark:from-green-400 dark:to-blue-400 bg-clip-text text-transparent">
+              <span className="text-xl font-display font-bold text-gray-900 dark:text-white">
                 Farmer Buddy
-              </h3>
-            </div>
-            <p className="text-gray-600 dark:text-gray-300 mb-4 max-w-md leading-relaxed">
-              Connecting communities with fresh, sustainable produce through AI-powered recommendations and direct farm-to-consumer relationships.
+              </span>
+            </Link>
+            <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+              Empowering farmers with AI technology and connecting communities with fresh, sustainable local produce.
             </p>
-            <div className="flex space-x-4">
-              <a href="#" className="text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors duration-300 transform hover:scale-110">
-                <FiGithub className="w-5 h-5" />
-              </a>
-              <a href="#" className="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-300 transform hover:scale-110">
-                <FiTwitter className="w-5 h-5" />
-              </a>
-              <a href="#" className="text-gray-400 hover:text-blue-700 dark:hover:text-blue-400 transition-colors duration-300 transform hover:scale-110">
-                <FiLinkedin className="w-5 h-5" />
-              </a>
-              <a href="#" className="text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors duration-300 transform hover:scale-110">
-                <FiMail className="w-5 h-5" />
-              </a>
+            <div className="flex gap-4">
+              <SocialLink icon={<FiTwitter />} href="#" />
+              <SocialLink icon={<FiFacebook />} href="#" />
+              <SocialLink icon={<FiInstagram />} href="#" />
+              <SocialLink icon={<FiLinkedin />} href="#" />
             </div>
           </div>
 
           {/* Quick Links */}
           <div>
-            <h4 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Quick Links</h4>
-            <ul className="space-y-2">
-              <li>
-                <a href="/" className="hover:text-green-600 dark:hover:text-green-400 transition-colors duration-300">
-                  Home
-                </a>
-              </li>
-              <li>
-                <a href="/marketplace" className="hover:text-green-600 dark:hover:text-green-400 transition-colors duration-300">
-                  Marketplace
-                </a>
-              </li>
-              <li>
-                <a href="/farmer-assistance" className="hover:text-green-600 dark:hover:text-green-400 transition-colors duration-300">
-                  Farmer Assistance
-                </a>
-              </li>
-              <li>
-                <a href="/order" className="hover:text-green-600 dark:hover:text-green-400 transition-colors duration-300">
-                  Order
-                </a>
-              </li>
+            <h4 className="font-display font-bold text-gray-900 dark:text-white mb-6">Platform</h4>
+            <ul className="space-y-4">
+              <FooterLink to="/marketplace" label="Marketplace" />
+              <FooterLink to="/smart-crop-planning" label="Smart Crop Plan" />
+              <FooterLink to="/ai-farming-chatbot" label="AI Assistant" />
+              <FooterLink to="/weather" label="Weather Forecast" />
             </ul>
           </div>
 
-          {/* Support */}
+          {/* Resources */}
           <div>
-            <h4 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Support</h4>
-            <ul className="space-y-2">
-              <li>
-                <a href="#" className="hover:text-green-600 dark:hover:text-green-400 transition-colors duration-300">
-                  Help Center
-                </a>
+            <h4 className="font-display font-bold text-gray-900 dark:text-white mb-6">Resources</h4>
+            <ul className="space-y-4">
+              <FooterLink to="/blog" label="Farming Blog" />
+              <FooterLink to="/farming-calendar" label="Crop Calendar" />
+              <FooterLink to="/prices" label="Market Prices" />
+              <FooterLink to="/community-impact-tracker" label="Impact Tracker" />
+            </ul>
+          </div>
+
+          {/* Contact */}
+          <div>
+            <h4 className="font-display font-bold text-gray-900 dark:text-white mb-6">Contact</h4>
+            <ul className="space-y-4 text-gray-600 dark:text-gray-400">
+              <li className="flex items-start gap-3">
+                <FiMail className="w-5 h-5 mt-1 text-primary-600" />
+                <span>support@farmerbuddy.com</span>
               </li>
-              <li>
-                <a href="#" className="hover:text-green-600 dark:hover:text-green-400 transition-colors duration-300">
-                  Contact Us
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-green-600 dark:hover:text-green-400 transition-colors duration-300">
-                  Privacy Policy
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-green-600 dark:hover:text-green-400 transition-colors duration-300">
-                  Terms of Service
-                </a>
-              </li>
+              <li>123 Farming Lane, Green Valley, India</li>
             </ul>
           </div>
         </div>
+      </div>
 
-        {/* Bottom Bar */}
-        <div className="border-t border-gray-200 dark:border-gray-700 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 md:mb-0">
-            © 2024 Farmer Buddy. All rights reserved.
+      {/* Bottom Bar */}
+      <div className="border-t border-earth-200 dark:border-white/10 bg-white/50 dark:bg-black/20">
+        <div className="container mx-auto px-6 py-8 flex flex-col md:flex-row items-center justify-between gap-4">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            © {new Date().getFullYear()} Farmer Buddy. All rights reserved.
           </p>
-          <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
-            <span>Made with</span>
-            <FiHeart className="w-4 h-4 text-red-500 animate-pulse-slow" />
-            <span>for sustainable farming</span>
+          <div className="flex items-center gap-6 text-sm">
+            <Link to="/privacy" className="text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Privacy Policy</Link>
+            <Link to="/terms" className="text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Terms of Service</Link>
           </div>
         </div>
       </div>
     </footer>
-    </>
   );
 };
+
+const SocialLink = ({ icon, href }) => (
+  <a
+    href={href}
+    className="w-10 h-10 rounded-full bg-white dark:bg-white/5 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-primary-500 hover:text-white dark:hover:bg-primary-600 transition-all duration-300 shadow-sm hover:shadow-glow transform hover:-translate-y-1"
+  >
+    {icon}
+  </a>
+);
+
+const FooterLink = ({ to, label }) => (
+  <li>
+    <Link
+      to={to}
+      className="text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors flex items-center gap-2 group"
+    >
+      <span className="w-1.5 h-1.5 rounded-full bg-primary-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+      {label}
+    </Link>
+  </li>
+);
 
 export default Footer;

@@ -382,7 +382,7 @@ const PostCard = ({ post, onLike, isAdmin, onDeleted }) => {
           <FaUserCircle size={24} />
         </div>
         <div>
-          <h3 className="font-bold text-gray-800">{post.author.name}</h3>
+          <h3 className="font-bold text-gray-800">{post.author?.name || 'Unknown User'}</h3>
           <p className="text-xs text-gray-500">
             {new Date(post.createdAt).toLocaleDateString()} • {post.metadata.season}
           </p>

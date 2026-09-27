@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { FiSearch, FiFilter, FiMapPin, FiShoppingCart, FiShoppingBag, FiHeart, FiStar, FiTrash2, FiEdit2, FiPlus, FiX, FiArrowRight } from 'react-icons/fi';
 import { productService, orderService } from '../api';
 import { useCart } from './CartContext';
+import { useRequireAuth } from '../../utils/authGuard';
 import { toast } from 'react-hot-toast';
 import { formatINR } from '../../utils/currency';
 
@@ -22,6 +23,7 @@ const Marketplace = () => {
     zip: ''
   });
   const { cart, addToCart, removeFromCart, clearCart } = useCart();
+  const { requireAuth } = useRequireAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const user = JSON.parse(localStorage.getItem('user') || 'null');
@@ -323,17 +325,20 @@ const Marketplace = () => {
   };
 
   const handleAddToCart = (product) => {
-    addToCart(product);
-    toast.success(`Added ${product.name} to cart!`);
+    const authAction = requireAuth(() => {
+      addToCart(product);
+      toast.success(`Added ${product.name} to cart!`);
+    });
+    authAction();
   };
 
   // Filter products based on search term and filters
   const filteredProducts = products.filter((product) => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.description.toLowerCase().includes(searchTerm.toLowerCase());
+      product.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = filterType === 'all' || product.type === filterType;
     const matchesLocation = filterLocation === 'all' || product.location === filterLocation;
-    
+
     return matchesSearch && matchesType && matchesLocation;
   });
 
@@ -352,7 +357,7 @@ const Marketplace = () => {
 
   const handleCheckout = async (e) => {
     e.preventDefault();
-    
+
     if (cart.length === 0) {
       toast.error('Your cart is empty!');
       return;
@@ -383,7 +388,7 @@ const Marketplace = () => {
 
       // Submit order
       const response = await orderService.createOrder(orderData);
-      
+
       // Clear cart and redirect to order confirmation
       clearCart();
       toast.success('Order placed successfully!');
@@ -412,9 +417,8 @@ const Marketplace = () => {
       </button>
 
       {/* Cart Sidebar */}
-      <div className={`fixed top-0 right-0 h-full w-full md:w-96 bg-white dark:bg-gray-800 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${
-        isCartOpen ? 'translate-x-0' : 'translate-x-full'
-      }`}>
+      <div className={`fixed top-0 right-0 h-full w-full md:w-96 bg-white dark:bg-gray-800 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${isCartOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}>
         <div className="flex flex-col h-full">
           {/* Cart Header */}
           <div className="flex items-center justify-between p-6 border-b-2 border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20">
@@ -562,7 +566,7 @@ const Marketplace = () => {
         />
       )}
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 pb-8 pt-28">
         <div className="flex items-center gap-4 mb-8">
           <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
             <FiShoppingBag className="w-10 h-10 text-green-600 dark:text-green-400" />
@@ -575,26 +579,26 @@ const Marketplace = () => {
           <form onSubmit={handleAddProduct} className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 mb-6">
             <h2 className="font-semibold mb-3 flex items-center gap-2"><FiPlus /> Add Product</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <input className="border rounded px-3 py-2 bg-white dark:bg-gray-700" placeholder="Name" value={newProduct.name} onChange={(e)=>setNewProduct({...newProduct,name:e.target.value})} required />
-              <input className="border rounded px-3 py-2 bg-white dark:bg-gray-700" placeholder="Price per unit" type="number" step="0.01" value={newProduct.price_per_unit} onChange={(e)=>setNewProduct({...newProduct,price_per_unit:e.target.value})} required />
-              <input className="border rounded px-3 py-2 bg-white dark:bg-gray-700" placeholder="Quantity" type="number" value={newProduct.quantity} onChange={(e)=>setNewProduct({...newProduct,quantity:e.target.value})} required />
-              <input className="border rounded px-3 py-2 bg-white dark:bg-gray-700 md:col-span-2" placeholder="Description" value={newProduct.description} onChange={(e)=>setNewProduct({...newProduct,description:e.target.value})} />
+              <input className="border rounded px-3 py-2 bg-white dark:bg-gray-700" placeholder="Name" value={newProduct.name} onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })} required />
+              <input className="border rounded px-3 py-2 bg-white dark:bg-gray-700" placeholder="Price per unit" type="number" step="0.01" value={newProduct.price_per_unit} onChange={(e) => setNewProduct({ ...newProduct, price_per_unit: e.target.value })} required />
+              <input className="border rounded px-3 py-2 bg-white dark:bg-gray-700" placeholder="Quantity" type="number" value={newProduct.quantity} onChange={(e) => setNewProduct({ ...newProduct, quantity: e.target.value })} required />
+              <input className="border rounded px-3 py-2 bg-white dark:bg-gray-700 md:col-span-2" placeholder="Description" value={newProduct.description} onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })} />
               <div className="flex gap-2">
-                <select className="border rounded px-3 py-2 bg-white dark:bg-gray-700" value={newProduct.unit} onChange={(e)=>setNewProduct({...newProduct,unit:e.target.value})}>
-                  {['kg','lb','piece','dozen','bunch','liter','gallon','box'].map(u=> <option key={u} value={u}>{u}</option>)}
+                <select className="border rounded px-3 py-2 bg-white dark:bg-gray-700" value={newProduct.unit} onChange={(e) => setNewProduct({ ...newProduct, unit: e.target.value })}>
+                  {['kg', 'lb', 'piece', 'dozen', 'bunch', 'liter', 'gallon', 'box'].map(u => <option key={u} value={u}>{u}</option>)}
                 </select>
-                <select className="border rounded px-3 py-2 bg-white dark:bg-gray-700" value={newProduct.category} onChange={(e)=>setNewProduct({...newProduct,category:e.target.value})}>
-                  {['vegetables','fruits','dairy','meat','poultry','grains','herbs','other'].map(c=> <option key={c} value={c}>{c}</option>)}
+                <select className="border rounded px-3 py-2 bg-white dark:bg-gray-700" value={newProduct.category} onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}>
+                  {['vegetables', 'fruits', 'dairy', 'meat', 'poultry', 'grains', 'herbs', 'other'].map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
-              <input className="border rounded px-3 py-2 bg-white dark:bg-gray-700" placeholder="City/Location" value={newProduct.location} onChange={(e)=>setNewProduct({...newProduct,location:e.target.value})} />
+              <input className="border rounded px-3 py-2 bg-white dark:bg-gray-700" placeholder="City/Location" value={newProduct.location} onChange={(e) => setNewProduct({ ...newProduct, location: e.target.value })} />
               <div className="space-y-2">
                 <label className="text-sm text-gray-700 dark:text-gray-300">Photos (multiple)</label>
                 <input
                   type="file"
                   accept="image/*"
                   multiple
-                  onChange={(e)=>setNewProduct({
+                  onChange={(e) => setNewProduct({
                     ...newProduct,
                     productImages: Array.from(e.target.files || [])
                   })}
@@ -732,8 +736,8 @@ const Marketplace = () => {
                     </div>
                     {isAdmin && (
                       <div className="mt-3 flex gap-2">
-                        <button onClick={(e) => { e.stopPropagation(); handleQuickEdit(product); }} className="px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1 text-sm"><FiEdit2/> Edit</button>
-                        <button onClick={(e) => { e.stopPropagation(); handleDelete(product._id); }} className="px-3 py-1.5 rounded bg-red-600 hover:bg-red-700 text-white flex items-center gap-1 text-sm"><FiTrash2/> Delete</button>
+                        <button onClick={(e) => { e.stopPropagation(); handleQuickEdit(product); }} className="px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1 text-sm"><FiEdit2 /> Edit</button>
+                        <button onClick={(e) => { e.stopPropagation(); handleDelete(product._id); }} className="px-3 py-1.5 rounded bg-red-600 hover:bg-red-700 text-white flex items-center gap-1 text-sm"><FiTrash2 /> Delete</button>
                       </div>
                     )}
                     <button

@@ -1,88 +1,96 @@
-// controllers/productController.js
-import mongoose from 'mongoose';
-import { Product } from "../models/product.model.js";
+// controller/Product.controller.js
+// ✅ MongoDB/Mongoose removed → Supabase PostgreSQL
+import supabase from '../config/supabase.js';
 import cloudinary from '../config/cloudinary.js';
 import fs from 'fs';
-export const addProduct = async (req, res) => {
-  const {
-    name,
-    description,
-    price_per_unit,
-    quantity,
-    unit,
-    category,
-    image,
-    location
-  } = req.body;
 
-  // farm is optional now (unauthenticated users can post). If authenticated, req.id will be present.
-  const farm = req.id || null;
+// Helper: upload image to Cloudinary or Supabase Storage
+const uploadImage = async (file) => {
+  if (!file) return null;
+  const baseUrl = process.env.VITE_BASE_URL || 'http://localhost:5000';
+
+  // Try Cloudinary first
+  if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
+    try {
+      const result = await cloudinary.uploader.upload(file.path, { folder: 'farmer-products' });
+      try { fs.unlinkSync(file.path); } catch {}
+      return result.secure_url;
+    } catch (err) {
+      console.error('Cloudinary upload failed, using local fallback:', err?.message);
+    }
+  }
+
+  // Supabase Storage fallback
+  try {
+    const fileBuffer = fs.readFileSync(file.path);
+    const fileName = `products/${Date.now()}_${file.originalname}`;
+    const { data, error } = await supabase.storage
+      .from('farm-fresh-uploads')
+      .upload(fileName, fileBuffer, { contentType: file.mimetype });
+    
+    try { fs.unlinkSync(file.path); } catch {}
+    
+    if (!error) {
+      const { data: urlData } = supabase.storage.from('farm-fresh-uploads').getPublicUrl(fileName);
+      return urlData.publicUrl;
+    }
+  } catch (err) {
+    console.error('Supabase Storage upload failed:', err?.message);
+  }
+
+  // Local fallback
+  return `${baseUrl}/uploads/${file.filename}`;
+};
+
+export const addProduct = async (req, res) => {
+  const { name, description, price_per_unit, quantity, unit, category, location } = req.body;
+  const farm_id = req.id || null;
 
   if (!name || !price_per_unit || !quantity || !unit || !category) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Missing required fields." });
+    return res.status(400).json({ success: false, message: "Missing required fields." });
   }
+
   let imageUrls = [];
   try {
-    // Helper to process a single uploaded file => url
-    const toUrl = async (file) => {
-      if (!file) return null;
-      const baseUrl = process.env.VITE_BASE_URL || 'http://localhost:5000';
-      // If Cloudinary configured, try upload
-      if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
-        try {
-          const result = await cloudinary.uploader.upload(file.path, { folder: 'farmer-products' });
-          // remove temp
-          try { fs.unlinkSync(file.path); } catch {}
-          return result.secure_url;
-        } catch (err) {
-          console.error('Cloudinary upload failed, fallback to local:', err?.message || err);
-          return `${baseUrl}/uploads/${file.filename}`;
-        }
-      }
-      // Local fallback
-      return `${baseUrl}/uploads/${file.filename}`;
-    };
-
-    // Multer can provide: req.file (single) or req.files with keys
+    // Process uploaded files
     if (req.file) {
-      const url = await toUrl(req.file);
+      const url = await uploadImage(req.file);
       if (url) imageUrls.push(url);
     }
     if (req.files && (req.files.productImage || req.files.images)) {
-      const files = [
-        ...(req.files.productImage || []),
-        ...(req.files.images || []),
-      ];
+      const files = [...(req.files.productImage || []), ...(req.files.images || [])];
       for (const f of files) {
-        const url = await toUrl(f);
+        const url = await uploadImage(f);
         if (url) imageUrls.push(url);
       }
     }
 
-    const newProduct = new Product({
-      name,
-      description,
-      price: Number(price_per_unit), // Map to the correct field
-      availableQuantity: Number(quantity), // Map to the correct field
-      unit,
-      category: category || 'vegetables', // Default to vegetables if not provided
-      images: imageUrls,
-      ...(farm ? { farm } : {}),
-      location
-    });
+    const { data: newProduct, error } = await supabase
+      .from('products')
+      .insert({
+        name,
+        description,
+        price: Number(price_per_unit),
+        available_quantity: Number(quantity),
+        unit,
+        category: category || 'vegetables',
+        images: imageUrls,
+        farm_id: farm_id,
+        organic: false
+      })
+      .select()
+      .single();
 
-    const savedProduct = await newProduct.save();
+    if (error) throw error;
 
     res.status(201).json({
       success: true,
       message: "Product added successfully.",
-      product: savedProduct
+      product: { ...newProduct, _id: newProduct.id }
     });
   } catch (error) {
     console.error("Error adding product:", error);
-    res.status(500).json({ success: false, message: "Server error." });
+    res.status(500).json({ success: false, message: "Server error.", error: error.message });
   }
 };
 
@@ -90,20 +98,21 @@ export const deleteProduct = async (req, res) => {
   const { id } = req.params;
 
   try {
-    // Check if product exists
-    const product = await Product.findById(id);
+    const { data: product, error: findError } = await supabase
+      .from('products')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-    if (!product) {
+    if (findError || !product) {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
 
-    // Delete the product
-    await Product.findByIdAndDelete(id);
+    // Delete from DB (CASCADE handles related data)
+    const { error } = await supabase.from('products').delete().eq('id', id);
+    if (error) throw error;
 
-    res.status(200).json({
-      success: true,
-      message: 'Product deleted successfully'
-    });
+    res.status(200).json({ success: true, message: 'Product deleted successfully' });
   } catch (error) {
     console.error('Error deleting product:', error);
     res.status(500).json({ success: false, message: 'Server error' });
@@ -111,14 +120,30 @@ export const deleteProduct = async (req, res) => {
 };
 
 export const getMyProducts = async (req, res) => {
-  const farmerId = req.id; // 
+  const farmerId = req.id;
 
   try {
-    const products = await Product.find({ farm: farmerId });
+    const { data: products, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('farm_id', farmerId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    // Map fields to match frontend expectations
+    const mapped = products.map(p => ({
+      ...p,
+      _id: p.id,
+      price_per_unit: p.price,          // frontend expects price_per_unit
+      quantity: p.available_quantity,    // frontend expects quantity
+      image: p.images && p.images.length > 0 ? p.images[0] : null,
+      location: p.location || '',
+    }));
 
     res.status(200).json({
       success: true,
-      products,
+      products: mapped
     });
   } catch (error) {
     console.error("Error fetching products:", error);
@@ -128,35 +153,33 @@ export const getMyProducts = async (req, res) => {
 
 export const updateProduct = async (req, res) => {
   const { id } = req.params;
-  const {
-    name,
-    description,
-    price_per_unit,
-    quantity,
-    unit,
-    category,
-    location,
-    organic,
-  } = req.body;
+  const { name, description, price_per_unit, quantity, unit, category, organic } = req.body;
 
   try {
-    const product = await Product.findById(id);
-    if (!product) {
-      return res.status(404).json({ success: false, message: 'Product not found' });
-    }
+    const updates = {};
+    if (name !== undefined) updates.name = name;
+    if (description !== undefined) updates.description = description;
+    if (price_per_unit !== undefined) updates.price = Number(price_per_unit);
+    if (quantity !== undefined) updates.available_quantity = Number(quantity);
+    if (unit !== undefined) updates.unit = unit;
+    if (category !== undefined) updates.category = category;
+    if (organic !== undefined) updates.organic = !!organic;
 
-    // Map incoming fields to model fields if provided
-    if (typeof name !== 'undefined') product.name = name;
-    if (typeof description !== 'undefined') product.description = description;
-    if (typeof price_per_unit !== 'undefined') product.price = price_per_unit;
-    if (typeof quantity !== 'undefined') product.availableQuantity = quantity;
-    if (typeof unit !== 'undefined') product.unit = unit;
-    if (typeof category !== 'undefined') product.category = category;
-    if (typeof organic !== 'undefined') product.organic = !!organic;
-    if (typeof location !== 'undefined') product.location = location;
+    const { data: updated, error } = await supabase
+      .from('products')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
 
-    const saved = await product.save();
-    return res.status(200).json({ success: true, message: 'Product updated', product: saved });
+    if (error) throw error;
+    if (!updated) return res.status(404).json({ success: false, message: 'Product not found' });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Product updated',
+      product: { ...updated, _id: updated.id }
+    });
   } catch (error) {
     console.error('Error updating product:', error);
     return res.status(500).json({ success: false, message: 'Server error' });
@@ -165,44 +188,31 @@ export const updateProduct = async (req, res) => {
 
 export const getAllProducts = async (req, res) => {
   try {
-    // If DB is not connected, return mock data to avoid 500 during development
-    if (mongoose.connection.readyState !== 1) {
-      console.warn("MongoDB not connected (readyState:", mongoose.connection.readyState, ") - returning mock products");
-      const mock = [
-        {
-          _id: 'mock-1',
-          name: 'Organic Tomatoes',
-          description: 'Fresh and juicy',
-          price_per_unit: 120,
-          quantity: 10,
-          unit: 'kg',
-          type: 'vegetables',
-          image: null,
-          location: 'Unknown',
-          organic: true,
-          rating: { average: 4.5, count: 12 },
-          createdAt: new Date().toISOString()
-        }
-      ];
-      return res.status(200).json({ success: true, count: mock.length, data: mock });
-    }
+    const { data: products, error } = await supabase
+      .from('products')
+      .select(`
+        *,
+        users:farm_id (name, location)
+      `)
+      .order('created_at', { ascending: false });
 
-    const products = await Product.find().populate('farm', 'name location'); // Add farmer info
+    if (error) throw error;
 
-    // Transform products to match frontend expectations
     const transformedProducts = products.map(product => ({
-      _id: product._id,
+      _id: product.id,
       name: product.name,
       description: product.description,
-      price_per_unit: product.price, // Map back to frontend field
-      quantity: product.availableQuantity, // Map back to frontend field
+      price_per_unit: product.price,
+      quantity: product.available_quantity,
       unit: product.unit,
-      type: product.category, // Map category to type for frontend
+      type: product.category,
       image: product.images && product.images.length > 0 ? product.images[0] : null,
-      location: product.farm?.location?.city || 'Unknown',
+      images: product.images || [],
+      location: product.users?.location?.city || 'Unknown',
       organic: product.organic,
       rating: product.rating,
-      createdAt: product.createdAt
+      createdAt: product.created_at,
+      farm: product.users ? { name: product.users.name, location: product.users.location } : null
     }));
 
     res.status(200).json({

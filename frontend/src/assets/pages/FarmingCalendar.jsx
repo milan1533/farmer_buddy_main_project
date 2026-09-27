@@ -86,9 +86,9 @@ const FarmingCalendar = () => {
   const categories = seasonData ? Object.keys(seasonData.categories) : [];
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-8 font-sans">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-28 pb-8 px-4 md:px-8 font-sans">
       <div className="max-w-5xl mx-auto space-y-8">
-        
+
         {/* Header */}
         <div className="text-center">
           <h1 className="text-3xl md:text-4xl font-bold text-gray-800 dark:text-gray-100">
@@ -104,8 +104,8 @@ const FarmingCalendar = () => {
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <span className="text-gray-500 dark:text-gray-400 font-medium">Current Month:</span>
-              <select 
-                value={currentMonth} 
+              <select
+                value={currentMonth}
                 onChange={(e) => setCurrentMonth(e.target.value)}
                 className="text-lg font-bold bg-transparent border-b-2 border-green-500 focus:outline-none text-gray-800 dark:text-gray-100"
               >
@@ -114,7 +114,7 @@ const FarmingCalendar = () => {
                 ))}
               </select>
             </div>
-            
+
             {/* Season Badge */}
             {currentSeason && (
               <div className={`flex items-center gap-3 px-4 py-2 rounded-full border ${getSeasonColor(currentSeason)}`}>
@@ -140,8 +140,8 @@ const FarmingCalendar = () => {
                   key={cat}
                   onClick={() => handleCategoryClick(cat)}
                   className={`p-4 rounded-xl border transition-all duration-200 text-left hover:shadow-md
-                    ${selectedCategory === cat 
-                      ? "bg-green-600 text-white border-green-600 shadow-lg scale-105" 
+                    ${selectedCategory === cat
+                      ? "bg-green-600 text-white border-green-600 shadow-lg scale-105"
                       : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-700 hover:border-green-400"
                     }`}
                 >

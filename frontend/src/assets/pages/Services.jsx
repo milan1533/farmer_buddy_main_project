@@ -41,15 +41,15 @@ const Services = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-all duration-300">
-      <main className="container mx-auto px-4 py-12">
+      <main className="container mx-auto px-4 pb-12 pt-28">
         <h1 className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-white mb-6 text-center">Services</h1>
 
         {isAdmin && (
           <form onSubmit={addService} className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow mb-6">
             <h2 className="text-lg font-semibold mb-3">Add Service</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <input className="border rounded px-3 py-2 bg-white dark:bg-gray-700" placeholder="Title" value={form.title} onChange={(e)=>setForm({...form,title:e.target.value})} required />
-              <input className="border rounded px-3 py-2 bg-white dark:bg-gray-700 md:col-span-2" placeholder="Description" value={form.desc} onChange={(e)=>setForm({...form,desc:e.target.value})} />
+              <input className="border rounded px-3 py-2 bg-white dark:bg-gray-700" placeholder="Title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required />
+              <input className="border rounded px-3 py-2 bg-white dark:bg-gray-700 md:col-span-2" placeholder="Description" value={form.desc} onChange={(e) => setForm({ ...form, desc: e.target.value })} />
             </div>
             <div className="mt-3">
               <button className="px-4 py-2 rounded bg-green-600 hover:bg-green-700 text-white">Add</button>
@@ -66,7 +66,7 @@ const Services = () => {
                   <p className="text-gray-600 dark:text-gray-300">{s.desc}</p>
                 </div>
                 {isAdmin && (
-                  <button onClick={()=>deleteService(s.id)} className="text-red-600 hover:text-red-700">Delete</button>
+                  <button onClick={() => deleteService(s.id)} className="text-red-600 hover:text-red-700">Delete</button>
                 )}
               </div>
             </div>

@@ -1,5 +1,5 @@
 import express from 'express';
-import { getCurrentMonthData, getCropSuggestion, getSmartCropRecommendations, getFarmingChat } from '../controllers/ai.controller.js';
+import { getCurrentMonthData, getCropSuggestion, getSmartCropRecommendations, getFarmingChat, getCropAdditionalInfo } from '../controllers/ai.controller.js';
 
 const router = express.Router();
 
@@ -14,5 +14,8 @@ router.post('/smart-crop-planning', getSmartCropRecommendations);
 
 // Feature 4: AI Farming Chatbot (Llama 3.2)
 router.post('/farming-chat', getFarmingChat);
+
+// Feature 5: Crop Additional Info (Weather, Market, Soil, Pest)
+router.post('/crop-info', getCropAdditionalInfo);
 
 export default router;

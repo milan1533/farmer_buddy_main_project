@@ -4,6 +4,7 @@ import { login, logout, register, updateProfile } from '../controller/Auth.contr
 const AuthRouter = express.Router();
 
 AuthRouter.post('/signup', register);
+AuthRouter.post('/register', register);  // alias
 AuthRouter.post('/login', login);
 AuthRouter.post('/logout', logout);
 AuthRouter.put('/update-profile', updateProfile);

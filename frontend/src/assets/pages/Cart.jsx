@@ -32,7 +32,7 @@ const Cart = () => {
 
   const handleCheckout = async (e) => {
     e.preventDefault();
-    
+
     if (cart.length === 0) {
       toast.error('Your cart is empty!');
       return;
@@ -63,7 +63,7 @@ const Cart = () => {
 
       // Submit order
       const response = await orderService.createOrder(orderData);
-      
+
       // Clear cart and redirect to order confirmation
       clearCart();
       toast.success('Order placed successfully!');
@@ -78,7 +78,7 @@ const Cart = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-all duration-300">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 pb-8 pt-28">
         <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-8">Your Cart</h1>
 
         {cart.length === 0 ? (
@@ -138,7 +138,7 @@ const Cart = () => {
             <div className="lg:col-span-1">
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 sticky top-8">
                 <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">Order Summary</h2>
-                
+
                 <div className="space-y-4 mb-6">
                   <div className="flex justify-between">
                     <span className="text-gray-600 dark:text-gray-300">Subtotal</span>
@@ -208,7 +208,7 @@ const Cart = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   <button
                     type="submit"
                     disabled={isLoading}

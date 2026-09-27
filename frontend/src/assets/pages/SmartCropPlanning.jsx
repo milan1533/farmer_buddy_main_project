@@ -8,6 +8,9 @@ import {
   FiMapPin,
   FiNavigation
 } from 'react-icons/fi';
+// import ReactMarkdown from "react-markdown";
+import { Remark } from "react-remark";
+//  import { FiTrendingUp } from "react-icons/fi";
 
 const SmartCropPlanning = () => {
   const [form, setForm] = useState({
@@ -265,15 +268,30 @@ const SmartCropPlanning = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-all duration-300">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-white mb-4">
-            🌱 Smart Crop Planning Assistant
-          </h1>
-          <p className="text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-            AI-powered recommendations for optimal crop selection, seasonal planning, and profit maximization
-          </p>
+      <div className="container mx-auto px-4 pb-8 pt-28">
+        {/* Header with Banner */}
+        <div className="relative rounded-3xl overflow-hidden mb-12 bg-primary-900 shadow-xl">
+          <div className="absolute inset-0">
+            <img
+              src="https://images.unsplash.com/photo-1628352081506-83c43123ed6d?q=80&w=2000&auto=format&fit=crop"
+              alt="Crop Planning"
+              className="w-full h-full object-cover opacity-40 mix-blend-overlay"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-primary-900/90 to-primary-800/80" />
+          </div>
+
+          <div className="relative z-10 p-8 md:p-16 text-center">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white/90 text-sm font-medium mb-6">
+              <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+              AI-Powered Analysis
+            </div>
+            <h1 className="text-4xl md:text-5xl font-display font-bold text-white mb-6">
+              Smart Crop Planning Assistant
+            </h1>
+            <p className="text-lg text-primary-100 max-w-2xl mx-auto leading-relaxed">
+              Make data-driven decisions for your farm. We analyze soil health, weather patterns, and market trends to recommend the most profitable crops for you.
+            </p>
+          </div>
         </div>
 
         {/* Location Map Section */}
@@ -282,14 +300,14 @@ const SmartCropPlanning = () => {
           {/* For this specific edit, I am targeting the entire component logic replacement mainly for onSubmit and Results */}
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-semibold text-gray-800 dark:text-white flex items-center gap-2">
-              <FiMapPin className="text-green-500" />
+              <FiMapPin className="text-primary-500" />
               Select Your Farm Location
             </h2>
             {/* ... rest of map UI ... */}
             <button
               onClick={getCurrentLocation}
               disabled={loading}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded-lg transition-all duration-200 text-sm font-medium"
+              className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-400 text-white rounded-lg transition-all duration-200 text-sm font-medium"
             >
               <FiNavigation className="w-4 h-4" />
               Use My Location
@@ -308,7 +326,7 @@ const SmartCropPlanning = () => {
             {!mapLoaded && (
               <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-700 rounded-xl">
                 <div className="text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-500 mx-auto mb-4"></div>
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500 mx-auto mb-4"></div>
                   <p className="text-gray-600 dark:text-gray-400">Loading map...</p>
                 </div>
               </div>
@@ -344,7 +362,7 @@ const SmartCropPlanning = () => {
                 onChange={handleChange}
                 placeholder="e.g., Gujarat, Maharashtra, Punjab"
                 required
-                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               />
               {/* ... */}
             </div>
@@ -358,7 +376,7 @@ const SmartCropPlanning = () => {
                 onChange={handleChange}
                 placeholder="e.g., Ahmedabad, Surat, Ludhiana"
                 required
-                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               />
             </div>
             <div>
@@ -370,7 +388,7 @@ const SmartCropPlanning = () => {
                 value={form.season}
                 onChange={handleChange}
                 required
-                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               >
                 <option value="kharif">Kharif (Monsoon - June to October)</option>
                 <option value="rabi">Rabi (Winter - November to March)</option>
@@ -387,7 +405,7 @@ const SmartCropPlanning = () => {
                 value={form.soilType}
                 onChange={handleChange}
                 required
-                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               >
                 <option value="Loamy">Loamy (Best for most crops)</option>
                 <option value="Sandy">Sandy (Light, well-drained)</option>
@@ -409,7 +427,7 @@ const SmartCropPlanning = () => {
                 type="number"
                 placeholder="e.g., 2 (in acres or hectares)"
                 required
-                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               />
             </div>
             <div>
@@ -421,7 +439,7 @@ const SmartCropPlanning = () => {
                 value={form.irrigationSource}
                 onChange={handleChange}
                 required
-                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               >
                 <option value="Rainfed">Rainfed (Only rainfall)</option>
                 <option value="Borewell">Borewell (Groundwater)</option>
@@ -438,7 +456,7 @@ const SmartCropPlanning = () => {
                 value={form.budget}
                 onChange={handleChange}
                 required
-                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               >
                 <option value="Low">Low (₹10,000 - ₹50,000 per acre)</option>
                 <option value="Medium">Medium (₹50,000 - ₹1,00,000 per acre)</option>
@@ -454,7 +472,7 @@ const SmartCropPlanning = () => {
                 value={form.lastCrop}
                 onChange={handleChange}
                 placeholder="e.g., Wheat, Rice, Cotton"
-                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               />
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Helps with crop rotation planning</p>
             </div>
@@ -464,7 +482,7 @@ const SmartCropPlanning = () => {
             <button
               onClick={onSubmit}
               disabled={loading || !form.state || !form.district || !form.landArea}
-              className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-8 py-3 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg"
+              className="bg-primary-600 hover:bg-primary-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-8 py-3 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
@@ -487,11 +505,13 @@ const SmartCropPlanning = () => {
         {recommendationReport && (
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 mb-8 shadow-lg">
             <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-6 flex items-center">
-              <FiTrendingUp className="mr-2 text-green-500" />
+              <FiTrendingUp className="mr-2 text-primary-500" />
               AI-Powered Crop Plan
             </h2>
-            <div className="prose prose-green max-w-none dark:prose-invert whitespace-pre-wrap leading-relaxed text-gray-700 dark:text-gray-300">
-              {recommendationReport}
+            <div className="prose prose-green max-w-none dark:prose-invert leading-relaxed text-gray-700 dark:text-gray-300">
+              <div className="reset-tw markdown-body">
+                <Remark>{recommendationReport}</Remark>
+              </div>
             </div>
           </div>
         )}

@@ -11,17 +11,17 @@ function OrderConfirmation() {
   const [error, setError] = useState(null);
   const location = useLocation();
   const navigate = useNavigate();
-  
+
   // Get orderId from location state or URL params
   const orderId = location.state?.orderId || new URLSearchParams(location.search).get('id');
-  
+
   useEffect(() => {
     const fetchOrderDetails = async () => {
       if (!orderId) {
         setIsLoading(false);
         return;
       }
-      
+
       try {
         setIsLoading(true);
         const response = await orderService.getOrderById(orderId);
@@ -30,7 +30,7 @@ function OrderConfirmation() {
         console.error('Error fetching order:', err);
         setError('Failed to load order details. Please try again.');
         toast.error('Could not load order details');
-        
+
         // Fallback to mock data if API fails
         setOrder({
           _id: orderId || 'ORD123456',
@@ -60,10 +60,10 @@ function OrderConfirmation() {
         setIsLoading(false);
       }
     };
-    
+
     fetchOrderDetails();
   }, [orderId]);
-  
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
@@ -71,14 +71,14 @@ function OrderConfirmation() {
       </div>
     );
   }
-  
+
   if (!order && !isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center p-4">
         <FiShoppingBag className="w-16 h-16 text-gray-400 mb-4" />
         <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">No Order Found</h2>
         <p className="text-gray-600 dark:text-gray-300 mb-6 text-center">We couldn't find the order you're looking for.</p>
-        <button 
+        <button
           onClick={() => navigate('/marketplace')}
           className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg"
         >
@@ -87,7 +87,7 @@ function OrderConfirmation() {
       </div>
     );
   }
-  
+
   const formattedAddress = order ? `${order.deliveryAddress.street}, ${order.deliveryAddress.city}, ${order.deliveryAddress.state} ${order.deliveryAddress.zip}` : '';
   const formattedDate = order?.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString('en-US', {
     year: 'numeric',
@@ -97,7 +97,7 @@ function OrderConfirmation() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-all duration-300">
-      <main className="container mx-auto px-4 py-12">
+      <main className="container mx-auto px-4 pb-12 pt-28">
         {/* Order Confirmation Header */}
         <section className="text-center mb-12 animate-fade-in-up">
           <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -274,21 +274,19 @@ function OrderConfirmation() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="flex items-center space-x-4">
                 <span className="text-sm font-semibold text-gray-600 dark:text-gray-300">Order Status:</span>
-                <span className={`px-4 py-2 rounded-full text-sm font-semibold ${
-                  order.status === 'confirmed' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
-                  order.status === 'pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' :
-                  'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-                }`}>
+                <span className={`px-4 py-2 rounded-full text-sm font-semibold ${order.status === 'confirmed' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
+                    order.status === 'pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                      'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                  }`}>
                   {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                 </span>
               </div>
               <div className="flex items-center space-x-4">
                 <span className="text-sm font-semibold text-gray-600 dark:text-gray-300">Payment Status:</span>
-                <span className={`px-4 py-2 rounded-full text-sm font-semibold ${
-                  order.paymentStatus === 'paid' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
-                  order.paymentStatus === 'pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' :
-                  'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-                }`}>
+                <span className={`px-4 py-2 rounded-full text-sm font-semibold ${order.paymentStatus === 'paid' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
+                    order.paymentStatus === 'pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                      'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                  }`}>
                   {order.paymentStatus.charAt(0).toUpperCase() + order.paymentStatus.slice(1)}
                 </span>
               </div>
@@ -299,19 +297,19 @@ function OrderConfirmation() {
         {/* Action Buttons */}
         <section className="text-center animate-fade-in-up">
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button 
+            <button
               onClick={() => navigate(`/order?id=${order._id}`)}
               className="bg-green-600 dark:bg-green-500 text-white px-8 py-3 rounded-xl hover:bg-green-700 dark:hover:bg-green-600 transition-all duration-300 transform hover:scale-105 font-semibold"
             >
               Track Order
             </button>
-            <button 
+            <button
               onClick={() => navigate('/orders')}
               className="bg-gray-600 dark:bg-gray-500 text-white px-8 py-3 rounded-xl hover:bg-gray-700 dark:hover:bg-gray-600 transition-all duration-300 transform hover:scale-105 font-semibold"
             >
               View All Orders
             </button>
-            <button 
+            <button
               onClick={() => navigate('/marketplace')}
               className="bg-blue-600 dark:bg-blue-500 text-white px-8 py-3 rounded-xl hover:bg-blue-700 dark:hover:bg-blue-600 transition-all duration-300 transform hover:scale-105 font-semibold"
             >

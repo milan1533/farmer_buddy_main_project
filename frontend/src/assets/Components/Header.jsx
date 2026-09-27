@@ -50,7 +50,7 @@ function Header() {
     // Close other dropdowns
     if (dropdownType !== 'more') setIsMoreOpen(false)
     if (dropdownType !== 'user') setIsUserMenuOpen(false)
-    
+
     // Toggle the clicked dropdown
     switch (dropdownType) {
       case 'more':
@@ -72,323 +72,152 @@ function Header() {
   }
 
   return (
-    <header className="bg-white/95 dark:bg-gray-900/90 backdrop-blur text-gray-800 dark:text-white py-2 shadow-md dark:shadow-gray-800/20 sticky top-0 z-50 transition-all duration-300">
-      <div className="container mx-auto px-4 flex items-center gap-6">
+    <header className="fixed top-0 w-full z-50 transition-all duration-300 bg-white/80 dark:bg-dark-bg/80 backdrop-blur-md border-b border-earth-200 dark:border-white/10 shadow-soft">
+      <div className="container mx-auto px-6 h-20 flex items-center justify-between gap-8">
         {/* Logo */}
-        <Link to="/" className="flex items-center space-x-2" onClick={handleMenuClick}>
-          <div className="w-6 h-6 bg-green-600 dark:bg-green-500 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-xs">F</span>
+        <Link to="/" className="flex items-center gap-3 group" onClick={handleMenuClick}>
+          <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-700 rounded-xl flex items-center justify-center shadow-lg transform group-hover:scale-105 transition-all duration-300">
+            <span className="text-white font-display font-bold text-xl">F</span>
           </div>
-          <h1 className="text-lg font-bold tracking-tight bg-gradient-to-r from-green-600 to-blue-600 dark:from-green-400 dark:to-blue-400 bg-clip-text text-transparent">
-            Farmer Buddy
-          </h1>
+          <div className="flex flex-col">
+            <h1 className="text-xl font-display font-bold text-gray-900 dark:text-white leading-none tracking-tight group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+              Farmer Buddy
+            </h1>
+            <span className="text-[10px] uppercase tracking-widest text-earth-600 dark:text-earth-400 font-semibold">
+              Premium Agri-Tech
+            </span>
+          </div>
         </Link>
 
         {/* Desktop Navigation */}
-        <nav className="hidden lg:block ml-auto">
-          <ul className="flex gap-4 text-sm lg:text-base items-center">
-            {/* Home */}
-            <li>
-              <Link to="/" className="flex flex-col items-center gap-1 px-4 py-2 rounded-xl hover:bg-green-50 dark:hover:bg-green-900/20 transition-all duration-300 group min-w-[80px]" onClick={handleMenuClick}>
-                <FiHome className="w-7 h-7 text-green-600 dark:text-green-400 group-hover:scale-110 transition-transform" />
-                <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Home</span>
-              </Link>
-            </li>
+        <nav className="hidden lg:flex items-center gap-1">
+          <Link to="/" className="px-4 py-2.5 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-primary-700 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/10 transition-all" onClick={handleMenuClick}>
+            Home
+          </Link>
+          <Link to="/marketplace" className="px-4 py-2.5 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-primary-700 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/10 transition-all" onClick={handleMenuClick}>
+            Marketplace
+          </Link>
+          <Link to="/services" className="px-4 py-2.5 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-primary-700 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/10 transition-all" onClick={handleMenuClick}>
+            Services
+          </Link>
 
-            {/* Marketplace */}
-            <li>
-              <Link to="/marketplace" className="flex flex-col items-center gap-1 px-4 py-2 rounded-xl hover:bg-green-50 dark:hover:bg-green-900/20 transition-all duration-300 group min-w-[80px]" onClick={handleMenuClick}>
-                <FiShoppingBag className="w-7 h-7 text-green-600 dark:text-green-400 group-hover:scale-110 transition-transform" />
-                <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Market</span>
-              </Link>
-            </li>
-
-            {/* Services */}
-            <li>
-              <Link to="/services" className="flex flex-col items-center gap-1 px-4 py-2 rounded-xl hover:bg-green-50 dark:hover:bg-green-900/20 transition-all duration-300 group min-w-[80px]" onClick={handleMenuClick}>
-                <FiSettings className="w-7 h-7 text-green-600 dark:text-green-400 group-hover:scale-110 transition-transform" />
-                <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Services</span>
-              </Link>
-            </li>
-
-            {/* More Options with submenu */}
-            <li className="relative" ref={moreDropdownRef}>
-              <button 
-                className="flex flex-col items-center gap-1 px-4 py-2 rounded-xl hover:bg-green-50 dark:hover:bg-green-900/20 transition-all duration-300 group min-w-[80px]"
-                onClick={() => handleDropdownClick('more')}
-              >
-                <FiGrid className="w-7 h-7 text-green-600 dark:text-green-400 group-hover:scale-110 transition-transform" />
-                <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">More</span>
-                <FiChevronDown className={`w-3 h-3 transition-transform ${isMoreOpen ? 'rotate-180' : ''}`} />
-              </button>
-              <div className={`absolute left-0 mt-3 w-96 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border-2 border-green-200 dark:border-green-800 p-4 transition-all duration-200 max-h-[80vh] overflow-y-auto ${
-                isMoreOpen ? 'opacity-100 visible' : 'opacity-0 invisible'
-              }`}>
-                <div className="grid grid-cols-3 gap-3">
-                  <Link to="/products" className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-all border-2 border-transparent hover:border-orange-300 dark:hover:border-orange-700" onClick={handleMenuClick}>
-                    <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center">
-                      <span className="text-2xl">🌾</span>
-                    </div>
-                    <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 text-center">Product</span>
-                  </Link>
-                  <Link to="/farming-calendar" className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-lime-50 dark:hover:bg-lime-900/20 transition-all border-2 border-transparent hover:border-lime-300 dark:hover:border-lime-700" onClick={handleMenuClick}>
-                    <div className="w-12 h-12 bg-lime-100 dark:bg-lime-900/30 rounded-full flex items-center justify-center">
-                      <span className="text-2xl">📅</span>
-                    </div>
-                    <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 text-center">Farming Calendar</span>
-                  </Link>
-                  <Link to="/prices" className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-green-50 dark:hover:bg-green-900/20 transition-all border-2 border-transparent hover:border-green-300 dark:hover:border-green-700" onClick={handleMenuClick}>
-                    <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-                      <span className="text-2xl">💰</span>
-                    </div>
-                    <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 text-center">Prices</span>
-                  </Link>
-                  <Link to="/weather" className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-yellow-50 dark:hover:bg-yellow-900/20 transition-all border-2 border-transparent hover:border-yellow-300 dark:hover:border-yellow-700" onClick={handleMenuClick}>
-                    <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center">
-                      <span className="text-2xl">☀️</span>
-                    </div>
-                    <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 text-center">Weather</span>
-                  </Link>
-                  <Link to="/blog" className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all border-2 border-transparent hover:border-purple-300 dark:hover:border-purple-700" onClick={handleMenuClick}>
-                    <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
-                      <span className="text-2xl">📝</span>
-                    </div>
-                    <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 text-center">Blog</span>
-                  </Link>
-                  <Link to="/gallery" className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-pink-50 dark:hover:bg-pink-900/20 transition-all border-2 border-transparent hover:border-pink-300 dark:hover:border-pink-700" onClick={handleMenuClick}>
-                    <div className="w-12 h-12 bg-pink-100 dark:bg-pink-900/30 rounded-full flex items-center justify-center">
-                      <span className="text-2xl">🖼️</span>
-                    </div>
-                    <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 text-center">Gallery</span>
-                  </Link>
-                  <Link to="/contact" className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all border-2 border-transparent hover:border-blue-300 dark:hover:border-blue-700" onClick={handleMenuClick}>
-                    <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
-                      <span className="text-2xl">📞</span>
-                    </div>
-                    <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 text-center">Contact</span>
-                  </Link>
-                  <Link to="/smart-crop-planning" className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-all border-2 border-transparent hover:border-emerald-300 dark:hover:border-emerald-700" onClick={handleMenuClick}>
-                    <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center">
-                      <span className="text-2xl">🌱</span>
-                    </div>
-                    <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 text-center">Crop Plan</span>
-                  </Link>
-                  <Link to="/ai-farming-chatbot" className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-cyan-50 dark:hover:bg-cyan-900/20 transition-all border-2 border-transparent hover:border-cyan-300 dark:hover:border-cyan-700" onClick={handleMenuClick}>
-                    <div className="w-12 h-12 bg-cyan-100 dark:bg-cyan-900/30 rounded-full flex items-center justify-center">
-                      <span className="text-2xl">🤖</span>
-                    </div>
-                    <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 text-center">AI Chat</span>
-                  </Link>
-                  <Link to="/ar-product-scanner" className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all border-2 border-transparent hover:border-indigo-300 dark:hover:border-indigo-700" onClick={handleMenuClick}>
-                    <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center">
-                      <span className="text-2xl">📱</span>
-                    </div>
-                    <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 text-center">AR Scan</span>
-                  </Link>
-                  <Link to="/community-impact-tracker" className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-all border-2 border-transparent hover:border-teal-300 dark:hover:border-teal-700" onClick={handleMenuClick}>
-                    <div className="w-12 h-12 bg-teal-100 dark:bg-teal-900/30 rounded-full flex items-center justify-center">
-                      <span className="text-2xl">🌍</span>
-                    </div>
-                    <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 text-center">Impact</span>
-                  </Link>
-                </div>
-              </div>
-            </li>
-
-            {/* User Menu */}
-            {isLoggedIn ? (
-              <li className="relative" ref={userDropdownRef}>
-                <button 
-                  className="flex flex-col items-center gap-1 px-4 py-2 rounded-xl hover:bg-green-50 dark:hover:bg-green-900/20 transition-all duration-300 group min-w-[80px]"
-                  onClick={() => handleDropdownClick('user')}
-                >
-                  <FiUser className="w-7 h-7 text-green-600 dark:text-green-400 group-hover:scale-110 transition-transform" />
-                  <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 truncate max-w-[60px]">{user?.name?.split(' ')[0] || 'User'}</span>
-                  <FiChevronDown className={`w-3 h-3 transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`} />
-                </button>
-                <div className={`absolute right-0 mt-3 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-2 transition-all duration-200 ${
-                  isUserMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'
-                }`}>
-                  <div className="text-sm">
-                    <div className="px-3 py-2 text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
-                      {user?.email}
-                    </div>
-                    {user?.role === 'farmer' && (
-                      <Link to="/farmerdashboard" className="block px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700" onClick={handleMenuClick}>
-                        Dashboard
-                      </Link>
-                    )}
-                    {isAdmin && (
-                      <Link to="/admin" className="block px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700" onClick={handleMenuClick}>
-                        Admin Panel
-                      </Link>
-                    )}
-                    <Link to="/settings" className="block px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700" onClick={handleMenuClick}>
-                      Settings
-                    </Link>
-                    <Link to="/orders" className="block px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700" onClick={handleMenuClick}>
-                      My Orders
-                    </Link>
-                    <button
-                      onClick={handleLogout}
-                      className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-red-600 dark:text-red-400 flex items-center gap-2"
-                    >
-                      <FiLogOut className="w-4 h-4" />
-                      Logout
-                    </button>
-                  </div>
-                </div>
-              </li>
-            ) : (
-              <li>
-                <Link to="/login" className="flex flex-col items-center gap-1 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl min-w-[100px]" onClick={handleMenuClick}>
-                  <FiUser className="w-6 h-6" />
-                  <span className="text-xs font-bold">Login</span>
+          {/* More Dropdown */}
+          <div className="relative group" ref={moreDropdownRef}>
+            <button
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-primary-700 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/10 transition-all"
+              onClick={() => handleDropdownClick('more')}
+            >
+              More
+              <FiChevronDown className={`w-4 h-4 transition-transform duration-300 ${isMoreOpen ? 'rotate-180 text-primary-600' : ''}`} />
+            </button>
+            <div className={`absolute top-full right-0 mt-2 w-80 p-2 bg-white dark:bg-dark-card rounded-2xl shadow-xl border border-gray-100 dark:border-white/10 transform transition-all duration-200 origin-top-right z-50 ${isMoreOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2'}`}>
+              <div className="grid grid-cols-2 gap-1">
+                <Link to="/products" className="flex flex-col items-center p-3 rounded-xl hover:bg-orange-50 dark:hover:bg-white/5 transition-colors group/item" onClick={handleMenuClick}>
+                  <span className="text-2xl mb-1 group-hover/item:scale-110 transition-transform">🌾</span>
+                  <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">Products</span>
                 </Link>
-              </li>
-            )}
-          </ul>
+                <Link to="/farming-calendar" className="flex flex-col items-center p-3 rounded-xl hover:bg-lime-50 dark:hover:bg-white/5 transition-colors group/item" onClick={handleMenuClick}>
+                  <span className="text-2xl mb-1 group-hover/item:scale-110 transition-transform">📅</span>
+                  <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">Calendar</span>
+                </Link>
+                <Link to="/weather" className="flex flex-col items-center p-3 rounded-xl hover:bg-sky-50 dark:hover:bg-white/5 transition-colors group/item" onClick={handleMenuClick}>
+                  <span className="text-2xl mb-1 group-hover/item:scale-110 transition-transform">🌤️</span>
+                  <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">Weather</span>
+                </Link>
+                <Link to="/smart-crop-planning" className="flex flex-col items-center p-3 rounded-xl hover:bg-emerald-50 dark:hover:bg-white/5 transition-colors group/item" onClick={handleMenuClick}>
+                  <span className="text-2xl mb-1 group-hover/item:scale-110 transition-transform">🌱</span>
+                  <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">AI Plan</span>
+                </Link>
+                <Link to="/ai-farming-chatbot" className="flex flex-col items-center p-3 rounded-xl hover:bg-indigo-50 dark:hover:bg-white/5 transition-colors group/item" onClick={handleMenuClick}>
+                  <span className="text-2xl mb-1 group-hover/item:scale-110 transition-transform">🤖</span>
+                  <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">Chatbot</span>
+                </Link>
+                <Link to="/ar-product-scanner" className="flex flex-col items-center p-3 rounded-xl hover:bg-purple-50 dark:hover:bg-white/5 transition-colors group/item" onClick={handleMenuClick}>
+                  <span className="text-2xl mb-1 group-hover/item:scale-110 transition-transform">📱</span>
+                  <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">AR Scan</span>
+                </Link>
+              </div>
+              <div className="mt-2 pt-2 border-t border-gray-100 dark:border-white/10 grid grid-cols-2 gap-1">
+                <Link to="/community-impact-tracker" className="flex items-center justify-center gap-2 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 text-xs font-medium text-gray-600 dark:text-gray-400" onClick={handleMenuClick}>
+                  🌍 Impact
+                </Link>
+                <Link to="/contact" className="flex items-center justify-center gap-2 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 text-xs font-medium text-gray-600 dark:text-gray-400" onClick={handleMenuClick}>
+                  📞 Contact
+                </Link>
+              </div>
+            </div>
+          </div>
         </nav>
 
-        {/* Theme Toggle and Mobile Menu Button */}
-        <div className="flex items-center space-x-3">
-          {/* Theme Toggle Button */}
-          <button
-            onClick={toggleTheme}
-            className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-300"
-            aria-label="Toggle theme"
-          >
-            {isDarkMode ? (
-              <FiSun className="w-4 h-4 text-yellow-500" />
-            ) : (
-              <FiMoon className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-            )}
+        {/* Right Actions */}
+        <div className="flex items-center gap-3">
+          <button onClick={toggleTheme} className="w-10 h-10 rounded-full flex items-center justify-center text-gray-500 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-white/5 transition-all">
+            {isDarkMode ? <FiSun className="w-5 h-5" /> : <FiMoon className="w-5 h-5" />}
           </button>
 
-          {/* Mobile Menu Button */}
-          <button
-            onClick={toggleMobileMenu}
-            className="lg:hidden p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-300"
-            aria-label="Toggle mobile menu"
-          >
-            {isMobileMenuOpen ? (
-              <FiX className="w-5 h-5" />
-            ) : (
-              <FiMenu className="w-5 h-5" />
-            )}
+          {isLoggedIn ? (
+            <div className="relative" ref={userDropdownRef}>
+              <button
+                onClick={() => handleDropdownClick('user')}
+                className="flex items-center gap-3 pl-1 pr-3 py-1 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-full hover:shadow-md transition-all shadow-sm"
+              >
+                <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-primary-700 dark:text-primary-400 font-bold text-sm">
+                  {user?.name?.[0] || <FiUser />}
+                </div>
+                <span className="hidden md:block text-sm font-medium text-gray-700 dark:text-gray-200">{user?.name?.split(' ')[0]}</span>
+                <FiChevronDown className={`w-3 h-3 text-gray-400 transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              <div className={`absolute right-0 mt-2 w-56 bg-white dark:bg-dark-card rounded-2xl shadow-xl border border-gray-100 dark:border-white/10 p-2 transform transition-all duration-200 origin-top-right z-50 ${isUserMenuOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2'}`}>
+                <div className="px-3 py-2 border-b border-gray-100 dark:border-white/10 mb-2">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{user?.name}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user?.email}</p>
+                </div>
+                {user?.role === 'farmer' && (
+                  <Link to="/farmerdashboard" className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 text-sm text-gray-700 dark:text-gray-200 transition-colors" onClick={handleMenuClick}>
+                    <FiGrid className="w-4 h-4" /> Dashboard
+                  </Link>
+                )}
+                {isAdmin && (
+                  <Link to="/admin" className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 text-sm text-gray-700 dark:text-gray-200 transition-colors" onClick={handleMenuClick}>
+                    <FiGrid className="w-4 h-4" /> Admin Panel
+                  </Link>
+                )}
+                <Link to="/orders" className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 text-sm text-gray-700 dark:text-gray-200 transition-colors" onClick={handleMenuClick}>
+                  <FiShoppingBag className="w-4 h-4" /> My Orders
+                </Link>
+                <Link to="/settings" className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 text-sm text-gray-700 dark:text-gray-200 transition-colors" onClick={handleMenuClick}>
+                  <FiSettings className="w-4 h-4" /> Settings
+                </Link>
+                <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 text-sm text-red-600 dark:text-red-400 transition-colors mt-1">
+                  <FiLogOut className="w-4 h-4" /> Logout
+                </button>
+              </div>
+            </div>
+          ) : (
+            <Link to="/login" className="px-6 py-2.5 rounded-full bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium shadow-lg hover:shadow-glow transition-all transform hover:-translate-y-0.5">
+              Sign In
+            </Link>
+          )}
+
+          <button onClick={toggleMobileMenu} className="lg:hidden p-2 text-gray-600 hover:bg-gray-100 rounded-lg">
+            {isMobileMenuOpen ? <FiX className="w-6 h-6" /> : <FiMenu className="w-6 h-6" />}
           </button>
         </div>
       </div>
 
-      {/* Mobile Navigation */}
-      {isMobileMenuOpen && (
-        <div className="lg:hidden animate-fade-in-up">
-          <div className="px-4 py-4 space-y-3 bg-white dark:bg-gray-900 border-t-2 border-green-200 dark:border-green-800">
-            <Link to="/" className="flex items-center gap-4 py-4 px-4 rounded-xl hover:bg-green-50 dark:hover:bg-green-900/20 transition-all duration-300 border-2 border-transparent hover:border-green-300" onClick={handleMenuClick}>
-              <FiHome className="w-8 h-8 text-green-600 dark:text-green-400" />
-              <span className="text-lg font-semibold text-gray-700 dark:text-gray-300">Home</span>
-            </Link>
-            <Link to="/marketplace" className="flex items-center gap-4 py-4 px-4 rounded-xl hover:bg-green-50 dark:hover:bg-green-900/20 transition-all duration-300 border-2 border-transparent hover:border-green-300" onClick={handleMenuClick}>
-              <FiShoppingBag className="w-8 h-8 text-green-600 dark:text-green-400" />
-              <span className="text-lg font-semibold text-gray-700 dark:text-gray-300">Marketplace</span>
-            </Link>
-            <Link to="/services" className="flex items-center gap-4 py-4 px-4 rounded-xl hover:bg-green-50 dark:hover:bg-green-900/20 transition-all duration-300 border-2 border-transparent hover:border-green-300" onClick={handleMenuClick}>
-              <FiSettings className="w-8 h-8 text-green-600 dark:text-green-400" />
-              <span className="text-lg font-semibold text-gray-700 dark:text-gray-300">Services</span>
-            </Link>
-
-            {/* More Options expandable */}
-            <button onClick={() => setIsMoreOpen(!isMoreOpen)} className="w-full flex items-center justify-between py-4 px-4 rounded-xl hover:bg-green-50 dark:hover:bg-green-900/20 transition-all duration-300 border-2 border-transparent hover:border-green-300">
-              <div className="flex items-center gap-4">
-                <FiGrid className="w-8 h-8 text-green-600 dark:text-green-400" />
-                <span className="text-lg font-semibold text-gray-700 dark:text-gray-300">More</span>
-              </div>
-              <FiChevronDown className={`w-6 h-6 transition-transform ${isMoreOpen ? 'rotate-180' : ''}`} />
-            </button>
-            {isMoreOpen && (
-              <div className="ml-4 space-y-2 grid grid-cols-2 gap-2">
-                <Link to="/products" className="flex flex-col items-center gap-2 py-3 px-3 rounded-xl hover:bg-orange-50 dark:hover:bg-orange-900/20 border-2 border-transparent hover:border-orange-300" onClick={handleMenuClick}>
-                  <span className="text-3xl">🌾</span>
-                  <span className="text-xs font-semibold text-center">Product</span>
-                </Link>
-                <Link to="/farming-calendar" className="flex flex-col items-center gap-2 py-3 px-3 rounded-xl hover:bg-lime-50 dark:hover:bg-lime-900/20 border-2 border-transparent hover:border-lime-300" onClick={handleMenuClick}>
-                  <span className="text-3xl">📅</span>
-                  <span className="text-xs font-semibold text-center">Farming Calendar</span>
-                </Link>
-                <Link to="/prices" className="flex flex-col items-center gap-2 py-3 px-3 rounded-xl hover:bg-green-50 dark:hover:bg-green-900/20 border-2 border-transparent hover:border-green-300" onClick={handleMenuClick}>
-                  <span className="text-3xl">💰</span>
-                  <span className="text-xs font-semibold text-center">Prices</span>
-                </Link>
-                <Link to="/weather" className="flex flex-col items-center gap-2 py-3 px-3 rounded-xl hover:bg-yellow-50 dark:hover:bg-yellow-900/20 border-2 border-transparent hover:border-yellow-300" onClick={handleMenuClick}>
-                  <span className="text-3xl">☀️</span>
-                  <span className="text-xs font-semibold text-center">Weather</span>
-                </Link>
-                <Link to="/blog" className="flex flex-col items-center gap-2 py-3 px-3 rounded-xl hover:bg-purple-50 dark:hover:bg-purple-900/20 border-2 border-transparent hover:border-purple-300" onClick={handleMenuClick}>
-                  <span className="text-3xl">📝</span>
-                  <span className="text-xs font-semibold text-center">Blog</span>
-                </Link>
-                <Link to="/gallery" className="flex flex-col items-center gap-2 py-3 px-3 rounded-xl hover:bg-pink-50 dark:hover:bg-pink-900/20 border-2 border-transparent hover:border-pink-300" onClick={handleMenuClick}>
-                  <span className="text-3xl">🖼️</span>
-                  <span className="text-xs font-semibold text-center">Gallery</span>
-                </Link>
-                <Link to="/contact" className="flex flex-col items-center gap-2 py-3 px-3 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-900/20 border-2 border-transparent hover:border-blue-300" onClick={handleMenuClick}>
-                  <span className="text-3xl">📞</span>
-                  <span className="text-xs font-semibold text-center">Contact</span>
-                </Link>
-                <Link to="/smart-crop-planning" className="flex flex-col items-center gap-2 py-3 px-3 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-900/20 border-2 border-transparent hover:border-emerald-300" onClick={handleMenuClick}>
-                  <span className="text-3xl">🌱</span>
-                  <span className="text-xs font-semibold text-center">Crop Plan</span>
-                </Link>
-                <Link to="/ai-farming-chatbot" className="flex flex-col items-center gap-2 py-3 px-3 rounded-xl hover:bg-cyan-50 dark:hover:bg-cyan-900/20 border-2 border-transparent hover:border-cyan-300" onClick={handleMenuClick}>
-                  <span className="text-3xl">🤖</span>
-                  <span className="text-xs font-semibold text-center">AI Chat</span>
-                </Link>
-                <Link to="/ar-product-scanner" className="flex flex-col items-center gap-2 py-3 px-3 rounded-xl hover:bg-indigo-50 dark:hover:bg-indigo-900/20 border-2 border-transparent hover:border-indigo-300" onClick={handleMenuClick}>
-                  <span className="text-3xl">📱</span>
-                  <span className="text-xs font-semibold text-center">AR Scan</span>
-                </Link>
-                <Link to="/community-impact-tracker" className="flex flex-col items-center gap-2 py-3 px-3 rounded-xl hover:bg-teal-50 dark:hover:bg-teal-900/20 border-2 border-transparent hover:border-teal-300" onClick={handleMenuClick}>
-                  <span className="text-3xl">🌍</span>
-                  <span className="text-xs font-semibold text-center">Impact</span>
-                </Link>
-              </div>
-            )}
-            
-            {isLoggedIn ? (
-              <>
-                {user?.role === 'farmer' && (
-                  <Link to="/farmerdashboard" className="flex items-center gap-4 py-4 px-4 rounded-xl hover:bg-green-50 dark:hover:bg-green-900/20 transition-all duration-300 border-2 border-transparent hover:border-green-300" onClick={handleMenuClick}>
-                    <span className="text-2xl">📊</span>
-                    <span className="text-lg font-semibold text-gray-700 dark:text-gray-300">Dashboard</span>
-                  </Link>
-                )}
-                {isLoggedIn && isAdmin && (
-                  <Link to="/admin" className="flex items-center gap-4 py-4 px-4 rounded-xl hover:bg-green-50 dark:hover:bg-green-900/20 transition-all duration-300 border-2 border-transparent hover:border-green-300" onClick={handleMenuClick}>
-                    <span className="text-2xl">🛠️</span>
-                    <span className="text-lg font-semibold text-gray-700 dark:text-gray-300">Admin Panel</span>
-                  </Link>
-                )}
-                <Link to="/orders" className="flex items-center gap-4 py-4 px-4 rounded-xl hover:bg-green-50 dark:hover:bg-green-900/20 transition-all duration-300 border-2 border-transparent hover:border-green-300" onClick={handleMenuClick}>
-                  <span className="text-2xl">📦</span>
-                  <span className="text-lg font-semibold text-gray-700 dark:text-gray-300">My Orders</span>
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="w-full flex items-center gap-4 py-4 px-4 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-300 text-red-600 dark:text-red-400 border-2 border-transparent hover:border-red-300"
-                >
-                  <FiLogOut className="w-8 h-8" />
-                  <span className="text-lg font-semibold">Logout</span>
-                </button>
-              </>
-            ) : (
-              <Link to="/login" className="flex items-center justify-center gap-3 py-4 px-6 rounded-xl bg-green-600 hover:bg-green-700 text-white transition-all duration-300 shadow-lg" onClick={handleMenuClick}>
-                <FiUser className="w-8 h-8" />
-                <span className="text-lg font-bold">Login</span>
-              </Link>
-            )}
-          </div>
+      {/* Mobile Menu */}
+      <div className={`lg:hidden fixed inset-0 z-40 bg-white dark:bg-dark-bg transition-transform duration-300 transform ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'} pt-24 px-6`}>
+        <div className="flex flex-col space-y-4">
+          <Link to="/" onClick={handleMenuClick} className="block w-full p-3 rounded-xl bg-gray-50 dark:bg-white/5 text-xl font-medium text-gray-900 dark:text-white">Home</Link>
+          <Link to="/marketplace" onClick={handleMenuClick} className="block w-full p-3 rounded-xl bg-gray-50 dark:bg-white/5 text-xl font-medium text-gray-900 dark:text-white">Marketplace</Link>
+          <Link to="/services" onClick={handleMenuClick} className="block w-full p-3 rounded-xl bg-gray-50 dark:bg-white/5 text-xl font-medium text-gray-900 dark:text-white">Services</Link>
+          <div className="h-px bg-gray-100 dark:bg-gray-800 my-2" />
+          <Link to="/smart-crop-planning" onClick={handleMenuClick} className="block w-full p-3 rounded-xl bg-gray-50 dark:bg-white/5 text-lg text-gray-700 dark:text-gray-200">Smart Crop Plan</Link>
+          <Link to="/ai-farming-chatbot" onClick={handleMenuClick} className="block w-full p-3 rounded-xl bg-gray-50 dark:bg-white/5 text-lg text-gray-700 dark:text-gray-200">AI Chatbot</Link>
+          <Link to="/products" onClick={handleMenuClick} className="block w-full p-3 rounded-xl bg-gray-50 dark:bg-white/5 text-lg text-gray-700 dark:text-gray-200">Products</Link>
         </div>
-      )}
+      </div>
     </header>
   )
 }
