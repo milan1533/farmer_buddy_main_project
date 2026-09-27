@@ -94,7 +94,8 @@ const AIFarmingChatbot = () => {
 
     try {
       // Send to backend API
-      const response = await fetch('http://localhost:5000/api/farming-chat', {
+      const baseUrl = import.meta.env.VITE_BASE_URL || 'http://localhost:5000';
+      const response = await fetch(`${baseUrl}/api/farming-chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

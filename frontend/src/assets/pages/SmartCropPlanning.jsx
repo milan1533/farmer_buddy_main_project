@@ -203,7 +203,8 @@ const SmartCropPlanning = () => {
 
   const getSmartRecommendations = async () => {
     // Call our backend API
-    const apiUrl = 'http://localhost:5000/api/smart-crop-planning';
+    const baseUrl = import.meta.env.VITE_BASE_URL || 'http://localhost:5000';
+    const apiUrl = `${baseUrl}/api/smart-crop-planning`;
 
     const payload = {
       state: form.state,

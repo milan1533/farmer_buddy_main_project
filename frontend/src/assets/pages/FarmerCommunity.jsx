@@ -4,7 +4,7 @@ import axios from 'axios';
 import { FaLeaf, FaComment, FaHeart, FaShare, FaUpload, FaUserCircle, FaSpinner, FaImage, FaVideo } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
 
-const API_BASE = 'http://localhost:5000/api/community';
+const API_BASE = `${import.meta.env.VITE_BASE_URL || 'http://localhost:5000'}/api/community`;
 
 const FarmerCommunity = () => {
   const location = useLocation();
